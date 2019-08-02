@@ -7,13 +7,13 @@ namespace Rock.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.1.3-40302")]
-    public sealed partial class AddRSVPCapabilities : IMigrationMetadata
+    public sealed partial class AddRSVPModel : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(AddRSVPCapabilities));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(AddRSVPModel));
         
         string IMigrationMetadata.Id
         {
-            get { return "201908020009185_AddRSVPCapabilities"; }
+            get { return "201908022221135_AddRSVPModel"; }
         }
         
         string IMigrationMetadata.Source
