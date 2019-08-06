@@ -154,7 +154,7 @@
                     var callback = function (response) {
                         self.handleLocationTitleAjaxResponse(response, selectValues, selectedValue);
                     };
-                    restUrl = 'api/locations/GetLocationTitles?locationIds=' + locationIds;
+                    restUrl = Rock.settings.get('baseUrl') + 'api/locations/GetLocationTitles?locationIds=' + locationIds;
                     $.ajax({
                         url: restUrl,
                         async: false,
@@ -176,13 +176,15 @@
 
                 var selectElement = $('#component-rsvp-occurrence');
                 // Loop through each of the results and append the option to the dropdown
+
+                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
                 for (var key in selectValues) {
                     var optionValue = selectValues[key];
                     var locationId = optionValue.split('|')[2];
                     var occurrenceDate = optionValue.split('|')[4];
-                    //BUG format date for display;
                     var objDate = new Date(JSON.parse('"' + occurrenceDate + '"'))
-                    var displayValue = objDate.toLocaleString('default', { month: 'long' }) + ' ' + objDate.getDate() + ', ' + objDate.getFullYear() + ' (' + objDate.toLocaleTimeString() + ')';
+                    //var displayValue = objDate.toLocaleString('default', { month: 'long' }) + ' ' + objDate.getDate() + ', ' + objDate.getFullYear() + ' (' + objDate.toLocaleTimeString() + ')';
+                    var displayValue = monthNames[objDate.getMonth()] + ' ' + objDate.getDate() + ', ' + objDate.getFullYear() + ' (' + objDate.toLocaleTimeString() + ')';
                     if (locationId && locationId != "null" && locationId != '') {
                         displayValue += ' - ' + locationTitles[locationId];
                     }
@@ -205,7 +207,7 @@
                 var callback = function (response) {
                     self.handleOccurrenceAjaxResponse(response, selectedValue);
                 };
-                var restUrl = 'api/AttendanceOccurrences/GetFutureGroupOccurrences?groupId=' + groupId;
+                var restUrl = Rock.settings.get('baseUrl') + 'api/AttendanceOccurrences/GetFutureGroupOccurrences?groupId=' + groupId;
                 $.ajax({
                     url: restUrl,
                     success: callback
@@ -229,7 +231,7 @@
 
                     if (occurrenceId == '0') {
                         //  This occurrence doesn't exist, so we need to make an AJAX call to create it, and then update the selected value to include the correct ID.
-                        var restUrl = 'api/AttendanceOccurrences/CreateGroupOccurrence?groupId=' + groupId + '&occurrenceDate=' + occurrenceDate;
+                        var restUrl = Rock.settings.get('baseUrl') + 'api/AttendanceOccurrences/CreateGroupOccurrence?groupId=' + groupId + '&occurrenceDate=' + occurrenceDate;
                         if (locationId != 'null') {
                             restUrl = restUrl + '&locationId=' + locationId;
                         }
