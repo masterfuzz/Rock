@@ -57,11 +57,27 @@
                 </asp:Panel>
 
                 <asp:Panel ID="pnlSingle_Decline" runat="server" Visible="false">
-                    <Rock:NotificationBox ID="nbDecline" runat="server" NotificationBoxType="Warning" />
+                    <div class="row">
+                        <div class="col-md-12">
+                            <Rock:NotificationBox ID="nbDecline" runat="server" NotificationBoxType="Warning" />
+                        </div>
+                    </div>
                     <asp:Panel ID="pnlDeclineReasons" runat="server" Visible="false">
-                        <Rock:RockRadioButtonList ID="rrblDeclineReasons" runat="server" Label="Please enter a reason below:" />
+                        <div class="row">
+                            <div class="col-md-12">
+                                <Rock:RockRadioButtonList ID="rrblDeclineReasons" runat="server" Label="Please enter a reason below:" Required="true" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <Rock:RockTextBox ID="rtbDeclineNote" runat="server" MaxLength="255" Label="Note" />
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <asp:HiddenField ID="hfDeclineReason_OccurrenceId" runat="server" />
+                            <asp:LinkButton ID="lbSaveDeclineReason" runat="server" AccessKey="s" ToolTip="Alt+S" Text="Save" CssClass="btn btn-primary" OnClick="lbSaveDeclineReason_Click" />
+                        </div>
                     </asp:Panel>
-
                 </asp:Panel>
 
                 <asp:Panel ID="pnlMultiple_Choice" runat="server" Visible="false">

@@ -266,6 +266,21 @@ namespace RockWeb.Blocks.RSVP
             ShowMultipleOccurrence_Accept( attendanceOccurrenceIdList, person );
         }
 
+        protected void lbSaveDeclineReason_Click( object sender, EventArgs e )
+        {
+            int? declineReason = rrblDeclineReasons.SelectedValueAsInt();
+            if ( declineReason.HasValue )
+            {
+                int occurrenceId = hfDeclineReason_OccurrenceId.Value.AsInteger();
+                using ( var rockContext = new RockContext() )
+                {
+                    var person = GetPerson();
+                    var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
+                    var occurrence = attendanceOccurrenceService.Get(occurrenceId);
+                    UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.No, null, declineReason.Value, rtbDeclineNote.Text );
+                }
+            }
+        }
         #endregion
 
         #region Internal Methods
@@ -460,7 +475,6 @@ namespace RockWeb.Blocks.RSVP
                     attendance.DeclineReasonValueId = declineReasonId;
                 }
                 attendance.Note = declineNote;
-
             }
 
             // Note that GroupMember attributes are being set, here.  If this control saves multiple attendance records for a same group (e.g., the same group meets on multiple dates and the user RSVPs to
@@ -496,6 +510,9 @@ namespace RockWeb.Blocks.RSVP
                     Show404();
                     return;
                 }
+
+                UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.No );
+                hfDeclineReason_OccurrenceId.Value = occurrenceId.ToString();
 
                 // Show Single Occurrence Decline form.
                 pnlSingle_Decline.Visible = true;

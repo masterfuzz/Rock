@@ -745,7 +745,7 @@
 						                <div class="row">
 							                <div class="col-md-12">
 								                <div class="form-group" id="component-rsvp-group">
-                                                    <Rock:GroupPicker ID="gpRSVPGroup" runat="server" CssClass="rsvp-group" />
+                                                    <Rock:GroupPicker ID="gpRSVPGroup" runat="server" CssClass="rsvp-group" LimitToRSVPEnabledGroups="true" />
 								                </div>
 							                </div>
 						                </div>
