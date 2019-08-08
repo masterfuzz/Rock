@@ -55,6 +55,7 @@ namespace RockWeb.Blocks.RSVP
         {
             public const string GroupId = "GroupId";
             public const string OccurrenceId = "OccurrenceId";
+            public const string OccurrenceDate = "OccurrenceDate";
         }
 
         protected static class UserPreferenceKey
@@ -74,6 +75,18 @@ namespace RockWeb.Blocks.RSVP
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+            gRSVPItems.Actions.ShowAdd = true;
+            gRSVPItems.Actions.AddClick += gRSVPItems_Add;
+        }
+
+        /// <summary>
+        /// Handles the Add event of the gRSVPItems control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void gRSVPItems_Add( object sender, EventArgs e )
+        {
+            NavigateToRSVPDetail();
         }
 
         /// <summary>
@@ -414,7 +427,15 @@ namespace RockWeb.Blocks.RSVP
         protected void gRSVPItems_RowSelected( object sender, RowEventArgs e )
         {
             int occurrenceId = GetOccurrenceId( e );
-            NavigateToRSVPDetail( occurrenceId.ToString() );
+            if ( occurrenceId == 0 )
+            {
+                HiddenField hfOccurrenceDate = e.Row.FindControl( "hfOccurrenceDate" ) as HiddenField;
+                NavigateToRSVPDetail( occurrenceId.ToString(), hfOccurrenceDate.Value );
+            }
+            else
+            {
+                NavigateToRSVPDetail( occurrenceId.ToString() );
+            }
         }
 
         /// <summary>
@@ -447,30 +468,24 @@ namespace RockWeb.Blocks.RSVP
 
                     DateTime occurrenceDate = DateTime.Parse( hfOccurrenceDate.Value );
 
-                    int groupId = -1;
-                    int.TryParse( hfGroupId.Value, out groupId );
+                    int? groupId = hfGroupId.Value.AsIntegerOrNull();
+                    int? scheduleId = hfScheduleId.Value.AsIntegerOrNull();
+                    int? locationId = hfLocationId.Value.AsIntegerOrNull();
 
-                    int scheduleId = -1;
-                    int.TryParse( hfScheduleId.Value, out scheduleId);
-
-                    int locationId = -1;
-                    int.TryParse( hfLocationId.Value, out locationId);
-
-                    var group = new GroupService( rockContext ).Get( groupId );
+                    var group = new GroupService( rockContext ).Get( groupId.Value );
                     var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
 
                     //If this occurrence has already been created, just return the existing one.
-                    var existingOccurrenceQry = attendanceOccurrenceService.Queryable()
-                       .Where( o => o.OccurrenceDate == occurrenceDate );
-                    if ( groupId > 0 )
+                    var existingOccurrenceQry = attendanceOccurrenceService.Queryable().Where( o => o.OccurrenceDate == occurrenceDate );
+                    if ( groupId != null )
                     {
                         existingOccurrenceQry = existingOccurrenceQry.Where( o => o.GroupId == groupId );
                     }
-                    if ( scheduleId > 0 )
+                    if ( scheduleId != null )
                     {
                         existingOccurrenceQry = existingOccurrenceQry.Where( o => o.ScheduleId == scheduleId );
                     }
-                    if ( locationId > 0 )
+                    if ( locationId != null )
                     {
                         existingOccurrenceQry = existingOccurrenceQry.Where( o => o.LocationId == locationId );
                     }
@@ -485,15 +500,15 @@ namespace RockWeb.Blocks.RSVP
                         //Create new occurrence.
                         var attendanceOccurrence = new AttendanceOccurrence();
 
-                        if ( groupId > 0 )
+                        if ( groupId != null )
                         {
                             attendanceOccurrence.GroupId = groupId;
                         }
-                        if ( scheduleId > 0 )
+                        if ( scheduleId != null )
                         {
                             attendanceOccurrence.ScheduleId = scheduleId;
                         }
-                        if ( locationId > 0 )
+                        if ( locationId != null )
                         {
                             attendanceOccurrence.LocationId = locationId;
                         }
@@ -513,7 +528,7 @@ namespace RockWeb.Blocks.RSVP
         /// Navigates to the row details page for a selected RSVP occurrence.
         /// </summary>
         /// <param name="occurrenceId">The Id of the occurence to display.</param>
-        private void NavigateToRSVPDetail( string occurrenceId = "" )
+        private void NavigateToRSVPDetail( string occurrenceId = "", string occurrenceDate = "" )
         {
             Dictionary<string, string> queryParams = new Dictionary<string, string>();
             int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
@@ -524,12 +539,16 @@ namespace RockWeb.Blocks.RSVP
             }
             else
             {
-                queryParams.Add( PageParameterKey.GroupId, groupId.Value.ToString() );
-                if ( !string.IsNullOrWhiteSpace( occurrenceId ) )
+                if ( string.IsNullOrWhiteSpace( occurrenceId ) )
                 {
-                    queryParams.Add( PageParameterKey.OccurrenceId, occurrenceId);
+                    occurrenceId = "0";
                 }
-
+                queryParams.Add( PageParameterKey.OccurrenceId, occurrenceId );
+                queryParams.Add( PageParameterKey.GroupId, groupId.Value.ToString() );
+                if ( !string.IsNullOrWhiteSpace( occurrenceDate ) )
+                {
+                    queryParams.Add( PageParameterKey.OccurrenceDate, occurrenceDate );
+                }
                 NavigateToLinkedPage( AttributeKey.RSVPDetailPage, queryParams );
             }
         }
@@ -540,7 +559,7 @@ namespace RockWeb.Blocks.RSVP
 
     #region Helper Class
 
-    public class RSVPListOccurrence
+    public class RSVPListOccurrence : Rock.Utility.RockDynamic
     {
         public int Id { get; set; }
         public DateTime OccurrenceDate { get; set; }
@@ -641,7 +660,6 @@ namespace RockWeb.Blocks.RSVP
                 }
             }
             this.NoResponseCount = Math.Max( 0, this.NoResponseCount );
-
         }
     }
 

@@ -62,6 +62,7 @@ namespace RockWeb.Blocks.Event
         {
             public const string GroupId = "GroupId";
             public const string OccurrenceId = "OccurrenceId";
+            public const string OccurrenceDate = "OccurrenceDate";
         }
 
         #region Control Methods
@@ -113,9 +114,9 @@ namespace RockWeb.Blocks.Event
                     lHeading.Text = "RSVP Detail " + group.Name;
 
                     int? occurrenceId = PageParameter( PageParameterKey.OccurrenceId ).AsIntegerOrNull();
-                    if ( ( occurrenceId == null ) || ( occurrenceId == 0 ) )
+                    if ( occurrenceId == null )
                     {
-                        NavigateToParentPage();
+                        NavigateToParentPage( new Dictionary<string, string>() { { PageParameterKey.GroupId, groupId.Value.ToString() } } );
                     }
                     else
                     {
@@ -142,8 +143,7 @@ namespace RockWeb.Blocks.Event
             {
                 if ( SaveRSVPData() )
                 {
-                    var qryParams = new Dictionary<string, string> { { PageParameterKey.GroupId, groupId.Value.ToString() } };
-                    NavigateToParentPage( qryParams );
+                    NavigateToParentPage( new Dictionary<string, string> { { PageParameterKey.GroupId, groupId.Value.ToString() } } );
                 }
             }
         }
@@ -153,12 +153,10 @@ namespace RockWeb.Blocks.Event
         /// </summary>
         protected void lbCancel_Click( object sender, EventArgs e )
         {
-            Dictionary<string, string> queryParams = new Dictionary<string, string>();
             int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
             if ( groupId != null )
             {
-                queryParams.Add( PageParameterKey.GroupId, groupId.Value.ToString() );
-                NavigateToParentPage( queryParams );
+                NavigateToParentPage( new Dictionary<string, string> { { PageParameterKey.GroupId, groupId.Value.ToString() } } );
             }
         }
 
@@ -245,6 +243,30 @@ namespace RockWeb.Blocks.Event
         /// <param name="group">The group the occurrence belongs to.</param>
         private void ShowDetails( RockContext rockContext, int occurrenceId, Group group )
         {
+            if ( occurrenceId == 0 )
+            {
+                ShowNewOccurrence();
+            }
+            else
+            {
+                ShowExistingOccurrence( rockContext, occurrenceId, group );
+            }
+        }
+
+        private void ShowNewOccurrence()
+        {
+            pnlEdit.Visible = true;
+            pnlDetails.Visible = false;
+            pnlAttendees.Visible = false;
+            string occurrenceDate = PageParameter( PageParameterKey.OccurrenceId );
+            if ( !string.IsNullOrWhiteSpace( occurrenceDate ) )
+            {
+                dpOccurrenceDate.SelectedDate = occurrenceDate.AsDateTime();
+            }
+        }
+
+        private void ShowExistingOccurrence( RockContext rockContext, int occurrenceId, Group group )
+        {
             pnlEdit.Visible = false;
             pnlDetails.Visible = true;
             pnlAttendees.Visible = true;
@@ -303,6 +325,7 @@ namespace RockWeb.Blocks.Event
             }
 
             BindAttendeeGridAndChart();
+
         }
 
         /// <summary>

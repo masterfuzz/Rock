@@ -2,6 +2,7 @@
 
 <asp:UpdatePanel ID="pnlContent" runat="server">
     <ContentTemplate>
+        <asp:HiddenField ID="hfNewOccurrenceId" runat="server" />
 
         <div class="panel panel-block">
 
