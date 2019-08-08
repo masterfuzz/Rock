@@ -17,13 +17,6 @@
                     </div>
 
                     <div class="panel-body">
-                        <!-- ToDo: move CSS definitions to appropriate file. -->
-                        <style scoped="scoped">
-                            .progress.rsvp-progress {width: 145px; border: 1px solid #AEAEAE}
-                            .progress.rsvp-progress .accepted {background-color: #16c98d;}
-                            .progress.rsvp-progress .declined {background-color: #d4442e;}
-                            .progress.rsvp-progress .unknown {background-color: #ffffff;}
-                        </style>
                         <div class="grid grid-panel">
                             <Rock:GridFilter ID="rFilter" runat="server" OnDisplayFilterValue="rFilter_DisplayFilterValue" OnApplyFilterClick="rFilter_ApplyFilterClick">
                                 <Rock:DateRangePicker ID="drpDates" runat="server" Label="Date Range" />
@@ -43,10 +36,9 @@
                                             <asp:HiddenField ID="hfGroupId" runat="server" Value='<%# Eval("GroupId") %>' />
                                             <asp:HiddenField ID="hfScheduleId" runat="server" Value='<%# Eval("ScheduleId") %>' />
                                             <asp:HiddenField ID="hfLocationId" runat="server" Value='<%# Eval("LocationId") %>' />
-                                            <div class="progress rsvp-progress">
-                                                <div class="progress-bar accepted" style="width: <%# Eval("AcceptedPercentage") %>%"></div>
-                                                <div class="progress-bar declined" style="width: <%# Eval("DeclinedPercentage") %>%"></div>
-                                                <div class="progress-bar unknown" style="width: <%# Eval("UnknownPercentage") %>%"></div>
+                                            <div class="progress" style="max-width:145px;">
+                                                <div class="progress-bar progress-bar-success" role="progressbar" style="width: <%# Eval("AcceptedPercentage") %>%"></div>
+                                                <div class="progress-bar progress-bar-danger" role="progressbar" style="width: <%# Eval("DeclinedPercentage") %>%"></div>
                                             </div>
                                         </ItemTemplate>
                                     </Rock:RockTemplateField>
