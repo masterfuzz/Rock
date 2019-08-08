@@ -70,7 +70,7 @@
                                 <Rock:RockCheckBoxList ID="rcblAvailableDeclineReasons" runat="server" Label="Available Decline Reasons" />
                             </div>
                             <div class="col-sm-6">
-                                <Rock:RockCheckBox ID="rcbShowDeclineReasons" runat="server" Label="Show Decline Reasons" Checked="true" />
+                                <Rock:RockCheckBox ID="rcbShowDeclineReasons" runat="server" Label="Show Decline Reasons" />
                             </div>
                         </div>
                     </Rock:PanelWidget>
@@ -87,17 +87,29 @@
         </div>
 
         <asp:Panel ID="pnlAttendees" runat="server" CssClass="panel panel-block">
+            <script type="text/javascript">
+                $(document).ready(function () {
+                    $('.js-rsvp-paired-checkbox').click(function (e) {
+                        if ($(this)[0].checked) {
+                            var pairedCheckbox = $('#' + $(this).data('paired-checkbox'))[0];
+                            pairedCheckbox.checked = false;
+                        }
+                    });
+                });
+            </script>
             <div class="panel-body">
 
                     <Rock:Grid ID="gAttendees" runat="server" DisplayType="Light" ExportSource="ColumnOutput" OnRowDataBound="gAttendees_RowDataBound" DataKeyNames="PersonId">
                         <Columns>
                             <Rock:RockBoundField DataField="FullName" HeaderText="Invitees" />
-                            <Rock:RockTemplateField HeaderText="Status" HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" ItemStyle-CssClass="grid-select-field">
+                            <Rock:RockTemplateField HeaderText="Accept" HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" ItemStyle-CssClass="grid-select-field">
                                 <ItemTemplate>
-                                    <Rock:RockRadioButtonList ID="rrblRSVPStatus" runat="server" RepeatDirection="Horizontal">
-                                        <asp:ListItem Text="Accept" Value="Accept" />
-                                        <asp:ListItem Text="Decline" Value="Decline" />
-                                    </Rock:RockRadioButtonList>
+                                    <Rock:RockCheckBox ID="rcbAccept" runat="server" DisplayInline="true" Checked='<%# Eval("Accept") %>' Text="Accept" CssClass="js-rsvp-paired-checkbox" />
+                                </ItemTemplate>
+                            </Rock:RockTemplateField>
+                            <Rock:RockTemplateField HeaderText="Decline" HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" ItemStyle-CssClass="grid-select-field">
+                                <ItemTemplate>
+                                    <Rock:RockCheckBox ID="rcbDecline" runat="server" DisplayInline="true" Checked='<%# Eval("Decline") %>' Text="Decline" CssClass="js-rsvp-paired-checkbox" />
                                 </ItemTemplate>
                             </Rock:RockTemplateField>
                             <Rock:RockTemplateField HeaderText="Decline Reason" HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" ItemStyle-CssClass="grid-select-field">

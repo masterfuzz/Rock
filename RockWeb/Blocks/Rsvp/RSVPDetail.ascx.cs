@@ -117,6 +117,11 @@ namespace RockWeb.Blocks.Event
                     int? occurrenceId = PageParameter( PageParameterKey.OccurrenceId ).AsIntegerOrNull();
                     if ( ( occurrenceId == null ) || ( occurrenceId == 0 ) )
                     {
+                        occurrenceId = hfNewOccurrenceId.Value.AsIntegerOrNull();
+                    }
+
+                    if ( ( occurrenceId == null ) || ( occurrenceId == 0 ) )
+                    {
                         NavigateToParentPage( new Dictionary<string, string>() { { PageParameterKey.GroupId, groupId.Value.ToString() } } );
                     }
                     else
@@ -173,16 +178,23 @@ namespace RockWeb.Blocks.Event
                 rddlDeclineReason.DataSource = _availableDeclineReasons;
                 rddlDeclineReason.DataBind();
 
-                // Select the appropriate radio button option.
-                RockRadioButtonList rrblRSVPStatus = e.Row.FindControl( "rrblRSVPStatus" ) as RockRadioButtonList;
+                //string rowId = e.Row.UniqueID;
+                RockCheckBox rcbAccept = e.Row.FindControl( "rcbAccept" ) as RockCheckBox;
+                RockCheckBox rcbDecline = e.Row.FindControl( "rcbDecline" ) as RockCheckBox;
+                rcbAccept.InputAttributes.Add( "data-paired-checkbox", rcbDecline.ClientID );
+                rcbDecline.InputAttributes.Add( "data-paired-checkbox", rcbAccept.ClientID );
+
                 var rsvpData = ( RSVPAttendee ) e.Row.DataItem;
-                if ( rsvpData.Accept )
+                if (rsvpData.DeclineReason.HasValue)
                 {
-                    rrblRSVPStatus.SelectedValue = "Accept";
-                }
-                else if ( rsvpData.Decline )
-                {
-                    rrblRSVPStatus.SelectedValue = "Decline";
+                    try
+                    {
+                        rddlDeclineReason.SelectedValue = rsvpData.DeclineReason.ToString();
+                    }
+                    catch
+                    {
+                        // This call may fail if the decline reason has been removed (from the DefinedType or from the individual occurrence).  Ignored.
+                    }
                 }
             }
         }
@@ -272,12 +284,23 @@ namespace RockWeb.Blocks.Event
             {
                 var occurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = occurrenceService.Get( occurrenceId.Value );
-                List<int> selectedDeclineReasons = occurrence.DeclineReasonValueIds.SplitDelimitedValues().Select( int.Parse ).ToList();
-                foreach ( DefinedValue value in _allDeclineReasons )
+                if ( occurrence.ShowDeclineReasons )
                 {
-                    if ( selectedDeclineReasons.Contains( value.Id ) )
+                    if (string.IsNullOrWhiteSpace(occurrence.DeclineReasonValueIds))
                     {
-                        values.Add( value );
+                        // if ShowDeclineReasons is true and no Decline Reasons were selected, show all available reasons.
+                        values = _allDeclineReasons;
+                    }
+                    else
+                    {
+                        List<int> selectedDeclineReasons = occurrence.DeclineReasonValueIds.SplitDelimitedValues().Select( int.Parse ).ToList();
+                        foreach ( DefinedValue value in _allDeclineReasons )
+                        {
+                            if ( selectedDeclineReasons.Contains( value.Id ) )
+                            {
+                                values.Add( value );
+                            }
+                        }
                     }
                 }
             }
@@ -313,6 +336,7 @@ namespace RockWeb.Blocks.Event
                 {
                     values = new DefinedValueService( rockContext ).Queryable()
                         .Where( v => v.DefinedTypeId == declineReasonsDefinedType.Id )
+                        .Where( v => v.IsActive )
                         .AsNoTracking().ToList();
                 }
             }
@@ -431,6 +455,24 @@ namespace RockWeb.Blocks.Event
         {
             using ( var rockContext = new RockContext() )
             {
+                int? occurrenceId = PageParameter( PageParameterKey.OccurrenceId ).AsIntegerOrNull();
+                if ( ( occurrenceId == null ) || ( occurrenceId == 0 ) )
+                {
+                    occurrenceId = hfNewOccurrenceId.Value.AsIntegerOrNull();
+                }
+
+                if ( ( occurrenceId != null ) && ( occurrenceId != 0 ) )
+                {
+                    var occurrenceService = new AttendanceOccurrenceService( rockContext );
+                    var occurrence = occurrenceService.Get( occurrenceId.Value );
+                    gAttendees.ColumnsOfType<RockTemplateField>()
+                        .First( c => c.HeaderText == "Decline Reason" )
+                        .Visible = occurrence.ShowDeclineReasons;
+                    gAttendees.ColumnsOfType<RockTemplateField>()
+                        .First( c => c.HeaderText == "Decline Note" )
+                        .Visible = occurrence.ShowDeclineReasons;
+                }
+    
                 var attendees = GetAttendees( rockContext );
                 int acceptCount = attendees.Where( a => a.Accept ).Count();
                 int declineCount = attendees.Where( a => a.Decline ).Count();
