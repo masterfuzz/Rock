@@ -39,6 +39,8 @@
 
                 <Rock:PanelDrawer ID="pdAuditDetails" runat="server"></Rock:PanelDrawer>
 
+                <div class="panel-badges" id="divBadgeContainer" runat="server"><Rock:BadgeListControl ID="blBadgeList" runat="server" /></div>
+
                 <div class="panel-body">
                     <Rock:NotificationBox ID="nbEditModeMessage" runat="server" NotificationBoxType="Info" />
                     <Rock:NotificationBox ID="nbRoleLimitWarning" runat="server" NotificationBoxType="Warning" Heading="Role Limit Warning" />
@@ -251,10 +253,10 @@
                     </div>
 
                     <fieldset id="fieldsetViewDetails" runat="server">
-
                         <div class="taglist">
                             <Rock:TagList ID="taglGroupTags" runat="server" CssClass="clearfix" />
                         </div>
+
                         <asp:Literal ID="lContent" runat="server"></asp:Literal>
 
                         <div class="actions">
