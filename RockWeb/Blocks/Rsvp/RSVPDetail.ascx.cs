@@ -115,20 +115,13 @@ namespace RockWeb.Blocks.Event
                     lHeading.Text = "RSVP Detail " + group.Name;
 
                     int? occurrenceId = PageParameter( PageParameterKey.OccurrenceId ).AsIntegerOrNull();
-                    if ( ( occurrenceId == null ) || ( occurrenceId == 0 ) )
+                    if ( occurrenceId == null )
                     {
-                        occurrenceId = hfNewOccurrenceId.Value.AsIntegerOrNull();
+                        occurrenceId = 0;
                     }
 
-                    if ( ( occurrenceId == null ) || ( occurrenceId == 0 ) )
-                    {
-                        NavigateToParentPage( new Dictionary<string, string>() { { PageParameterKey.GroupId, groupId.Value.ToString() } } );
-                    }
-                    else
-                    {
-                        // Display Occurrence
-                        ShowDetails( rockContext, occurrenceId.Value, group );
-                    }
+                    // Display Occurrence
+                    ShowDetails( rockContext, occurrenceId.Value, group );
                 }
             }
         }
@@ -178,7 +171,6 @@ namespace RockWeb.Blocks.Event
                 rddlDeclineReason.DataSource = _availableDeclineReasons;
                 rddlDeclineReason.DataBind();
 
-                //string rowId = e.Row.UniqueID;
                 RockCheckBox rcbAccept = e.Row.FindControl( "rcbAccept" ) as RockCheckBox;
                 RockCheckBox rcbDecline = e.Row.FindControl( "rcbDecline" ) as RockCheckBox;
                 rcbAccept.InputAttributes.Add( "data-paired-checkbox", rcbDecline.ClientID );
@@ -238,8 +230,9 @@ namespace RockWeb.Blocks.Event
                 CreateNewOccurrence();
             }
 
-            _availableDeclineReasons = null;
-            GetAvailableDeclineReasons();
+            pnlEdit.Visible = false;
+            pnlDetails.Visible = true;
+            pnlAttendees.Visible = true;
         }
 
         #endregion
@@ -279,20 +272,23 @@ namespace RockWeb.Blocks.Event
                 return;
             }
 
-            // Filter values by occurrence setting.
             using ( var rockContext = new RockContext() )
             {
                 var occurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = occurrenceService.Get( occurrenceId.Value );
                 if ( occurrence.ShowDeclineReasons )
                 {
-                    if (string.IsNullOrWhiteSpace(occurrence.DeclineReasonValueIds))
+                    if ( string.IsNullOrWhiteSpace( occurrence.DeclineReasonValueIds ) )
                     {
                         // if ShowDeclineReasons is true and no Decline Reasons were selected, show all available reasons.
-                        values = _allDeclineReasons;
+                        foreach ( var value in _allDeclineReasons )
+                        {
+                            values.Add( value );
+                        }
                     }
                     else
                     {
+                        // Filter values by occurrence setting.
                         List<int> selectedDeclineReasons = occurrence.DeclineReasonValueIds.SplitDelimitedValues().Select( int.Parse ).ToList();
                         foreach ( DefinedValue value in _allDeclineReasons )
                         {
@@ -363,6 +359,9 @@ namespace RockWeb.Blocks.Event
             }
         }
 
+        /// <summary>
+        /// Displays the edit form for a new occurrence.
+        /// </summary>
         private void ShowNewOccurrence()
         {
             pnlEdit.Visible = true;
@@ -375,15 +374,40 @@ namespace RockWeb.Blocks.Event
             }
         }
 
+        /// <summary>
+        /// Displays the detail form for an existing occurrence.
+        /// </summary>
+        /// <param name="rockContext">The DbContext.</param>
+        /// <param name="occurrenceId">The ID of the occurrence to display.</param>
+        /// <param name="group">The group the occurrence belongs to.</param>
         private void ShowExistingOccurrence( RockContext rockContext, int occurrenceId, Group group )
         {
             pnlEdit.Visible = false;
             pnlDetails.Visible = true;
             pnlAttendees.Visible = true;
 
+            var groupType = new GroupTypeService( rockContext ).Get( group.GroupTypeId );
             var occurrence = new AttendanceOccurrenceService( rockContext ).Get( occurrenceId );
             lOccurrenceDate.Text = occurrence.OccurrenceDate.ToLocalTime().ToShortDateString();
+            dpOccurrenceDate.SelectedDate = occurrence.OccurrenceDate;
+            heAcceptMessage.Text = occurrence.AcceptConfirmationMessage;
+            heDeclineMessage.Text = occurrence.DeclineConfirmationMessage;
 
+            rcbShowDeclineReasons.Checked = occurrence.ShowDeclineReasons;
+            List<int> selectedDeclineReasons = occurrence.DeclineReasonValueIds.SplitDelimitedValues().Select( int.Parse ).ToList();
+            foreach ( int declineReasonId in selectedDeclineReasons )
+            {
+                foreach ( ListItem liItem in rcblAvailableDeclineReasons.Items )
+                {
+                    if ( liItem.Value == declineReasonId.ToString() )
+                    {
+                        liItem.Selected = true;
+                    }
+                }
+            }
+
+
+            //BUG - Get location and schedule details correctly.
             Location location = null;
             if ( occurrence.LocationId.HasValue )
             {
@@ -478,6 +502,10 @@ namespace RockWeb.Blocks.Event
                 int declineCount = attendees.Where( a => a.Decline ).Count();
                 int noResponseCount = attendees.Count() - acceptCount - declineCount;
                 RegisterDoughnutChartScript( acceptCount, declineCount, noResponseCount );
+
+                _availableDeclineReasons = null;
+                GetAvailableDeclineReasons();
+
                 gAttendees.DataSource = attendees;
                 gAttendees.DataBind();
             }
@@ -600,19 +628,18 @@ var dnutChart = new Chart(dnutCtx, {{
             {
                 if ( row.RowType == DataControlRowType.DataRow )
                 {
-                    RockRadioButtonList rrblRSVPStatus = row.FindControl( "rrblRSVPStatus" ) as RockRadioButtonList;
+                    RockCheckBox rcbAccept = row.FindControl( "rcbAccept" ) as RockCheckBox;
+                    RockCheckBox rcbDecline = row.FindControl( "rcbDecline" ) as RockCheckBox;
                     DataDropDownList rddlDeclineReason = row.FindControl( "rddlDeclineReason" ) as DataDropDownList;
                     RockTextBox tbDeclineNote = row.FindControl( "tbDeclineNote" ) as RockTextBox;
-                    bool accepted = ( rrblRSVPStatus.SelectedValue == "Accept" );
-                    bool declined = ( rrblRSVPStatus.SelectedValue == "Decline" );
                     int declineReason = int.Parse( rddlDeclineReason.SelectedValue );
                     string declineNote = tbDeclineNote.Text;
 
                     attendees.Add(
                         new RSVPAttendee()
                         {
-                            Accept = accepted,
-                            Decline = declined,
+                            Accept = rcbAccept.Checked,
+                            Decline = rcbDecline.Checked,
                             DeclineNote = declineNote,
                             DeclineReason = declineReason,
                             PersonId = ( int ) gAttendees.DataKeys[row.RowIndex].Value
@@ -642,43 +669,6 @@ var dnutChart = new Chart(dnutCtx, {{
                 }
 
                 occurrence = occurrenceService.Get( occurrenceId.Value );
-
-                //if ( occurrence == null )
-                //{
-                //    occurrence = new AttendanceOccurrence();
-                //    occurrence.GroupId = groupId.Value;
-
-                //    var group = new GroupService( rockContext ).Get( groupId.Value );
-
-                //    Location location = null;
-                //    var locationTypeValue = DefinedValueCache.Get( GetAttributeValue( AttributeKey.GroupMeetingLocationType ) );
-                //    var groupLocations = group.GroupLocations
-                //        .Where( gl => gl.GroupLocationTypeValueId == locationTypeValue.Id )
-                //        .Select( gl => gl.LocationId );
-                //    var groupMeetingLocation = new LocationService( rockContext ).Queryable()
-                //        .Where( l => groupLocations.Contains( l.Id ) )
-                //        .AsNoTracking().FirstOrDefault();
-                //    if ( groupMeetingLocation != null )
-                //    {
-                //        location = groupMeetingLocation;
-                //    }
-
-                //    if ( location != null )
-                //    {
-                //        occurrence.LocationId = location.Id;
-                //    }
-
-                //    if ( group.ScheduleId.HasValue )
-                //    {
-                //        occurrence.ScheduleId = group.ScheduleId;
-                //        DateTime? occurrenceDate = group.Schedule.GetNextStartDateTime( DateTime.Now );
-                //        if ( occurrenceDate.HasValue )
-                //        {
-                //            occurrence.OccurrenceDate = occurrenceDate.Value;
-                //        }
-                //    }
-                //    occurrenceService.Add( occurrence );
-                //}
 
                 var existingAttendees = occurrence.Attendees.ToList();
 
@@ -742,49 +732,58 @@ var dnutChart = new Chart(dnutCtx, {{
         /// </summary>
         private void CreateNewOccurrence()
         {
-            using (var rockContext = new RockContext())
+            using ( var rockContext = new RockContext() )
             {
                 int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
+                var group = new GroupService( rockContext ).Get( groupId.Value );
+
                 var occurrence = new AttendanceOccurrence();
                 occurrence.GroupId = groupId.Value;
 
-                var group = new GroupService( rockContext ).Get( groupId.Value );
+                //Create new occurrence.
+                var attendanceOccurrence = new AttendanceOccurrence();
+                attendanceOccurrence.GroupId = groupId;
+                //attendanceOccurrence.LocationId = locationId;
+                //attendanceOccurrence.ScheduleId = scheduleId;
+                if (dpOccurrenceDate.SelectedDate.HasValue)
+                {
+                    occurrence.OccurrenceDate = dpOccurrenceDate.SelectedDate.Value;
+                }
+
 
                 //BUG - fix location and schedule selection.
 
-                Location location = null;
-                var locationTypeValue = DefinedValueCache.Get( GetAttributeValue( AttributeKey.GroupMeetingLocationType ) );
-                var groupLocations = group.GroupLocations
-                    .Where( gl => gl.GroupLocationTypeValueId == locationTypeValue.Id )
-                    .Select( gl => gl.LocationId );
+                //Location location = null;
+                //var locationTypeValue = DefinedValueCache.Get( GetAttributeValue( AttributeKey.GroupMeetingLocationType ) );
+                //var groupLocations = group.GroupLocations
+                //    .Where( gl => gl.GroupLocationTypeValueId == locationTypeValue.Id )
+                //    .Select( gl => gl.LocationId );
 
-                var groupMeetingLocation = new LocationService( rockContext ).Queryable()
-                    .Where( l => groupLocations.Contains( l.Id ) )
-                    .AsNoTracking().FirstOrDefault();
-                if ( groupMeetingLocation != null )
-                {
-                    location = groupMeetingLocation;
-                }
+                //var groupMeetingLocation = new LocationService( rockContext ).Queryable()
+                //    .Where( l => groupLocations.Contains( l.Id ) )
+                //    .AsNoTracking().FirstOrDefault();
+                //if ( groupMeetingLocation != null )
+                //{
+                //    location = groupMeetingLocation;
+                //}
 
-                if ( location != null )
-                {
-                    occurrence.LocationId = location.Id;
-                }
+                //if ( location != null )
+                //{
+                //    occurrence.LocationId = location.Id;
+                //}
 
-                if ( group.ScheduleId.HasValue )
-                {
-                    occurrence.ScheduleId = group.ScheduleId;
-                    DateTime? occurrenceDate = group.Schedule.GetNextStartDateTime( DateTime.Now );
-                    if ( occurrenceDate.HasValue )
-                    {
-                        occurrence.OccurrenceDate = occurrenceDate.Value;
-                    }
-                }
+                //if ( group.ScheduleId.HasValue )
+                //{
+                //    occurrence.ScheduleId = group.ScheduleId;
+                //    DateTime? occurrenceDate = group.Schedule.GetNextStartDateTime( DateTime.Now );
+                //}
 
                 var occurrenceService = new AttendanceOccurrenceService( rockContext );
                 occurrenceService.Add( occurrence );
                 rockContext.SaveChanges();
                 hfNewOccurrenceId.Value = occurrence.Id.ToString();
+
+                ShowDetails( rockContext, occurrence.Id, group );
             }
         }
 
@@ -792,6 +791,9 @@ var dnutChart = new Chart(dnutCtx, {{
         {
             using ( var rockContext = new RockContext() )
             {
+                int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
+                var group = new GroupService( rockContext ).Get( groupId.Value );
+
                 var occurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = occurrenceService.Get( occurrenceId );
 
@@ -806,10 +808,20 @@ var dnutChart = new Chart(dnutCtx, {{
                 occurrence.DeclineConfirmationMessage = heDeclineMessage.Text;
                 occurrence.AcceptConfirmationMessage = heAcceptMessage.Text;
                 occurrence.ShowDeclineReasons = rcbShowDeclineReasons.Checked;
-                occurrence.DeclineReasonValueIds = rcblAvailableDeclineReasons.SelectedValuesAsInt.AsDelimited( "," );
-                //BUG - set decline reasons.
+
+                var selectedDeclineReasons = new List<string>();
+                foreach ( ListItem listItem in rcblAvailableDeclineReasons.Items )
+                {
+                    if ( listItem.Selected )
+                    {
+                        selectedDeclineReasons.Add( listItem.Value );
+                    }
+                }
+                occurrence.DeclineReasonValueIds = selectedDeclineReasons.AsDelimited( "," );
 
                 rockContext.SaveChanges();
+
+                ShowDetails(rockContext, occurrence.Id, group);
             }
         }
 

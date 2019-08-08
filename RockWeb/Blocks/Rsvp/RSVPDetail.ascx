@@ -67,7 +67,7 @@
                         </div>
                         <div class="row">
                             <div class="col-sm-6">
-                                <Rock:RockCheckBoxList ID="rcblAvailableDeclineReasons" runat="server" Label="Available Decline Reasons" />
+                                <Rock:RockCheckBoxList ID="rcblAvailableDeclineReasons" runat="server" Label="Available Decline Reasons" DataTextField="Value" DataValueField="Id" />
                             </div>
                             <div class="col-sm-6">
                                 <Rock:RockCheckBox ID="rcbShowDeclineReasons" runat="server" Label="Show Decline Reasons" />
@@ -114,7 +114,7 @@
                             </Rock:RockTemplateField>
                             <Rock:RockTemplateField HeaderText="Decline Reason" HeaderStyle-HorizontalAlign="Center" ItemStyle-HorizontalAlign="Center" ItemStyle-CssClass="grid-select-field">
                                 <ItemTemplate>
-                                    <Rock:DataDropDownList ID="rddlDeclineReason" runat="server" SourceTypeName="Rock.Model.DefinedValue" DataTextField="Value" DataValueField="Id">
+                                    <Rock:DataDropDownList ID="rddlDeclineReason" runat="server" SourceTypeName="Rock.Model.DefinedValue" PropertyName="Value" DataTextField="Value" Label="" DataValueField="Id">
                                         <asp:ListItem Text="" Value="" />
                                     </Rock:DataDropDownList>
                                 </ItemTemplate>
