@@ -61,11 +61,12 @@
                 });
             },
             setProperties: function ($rsvpComponent) {
-
-                var declineButtonShell = Rock.controls.emailEditor.$currentRsvpComponent.find('.decline-button-shell');
-                $('.js-rsvp-include-decline').checked = declineButtonShell.is(':visible')
-
                 Rock.controls.emailEditor.$currentRsvpComponent = $rsvpComponent;
+
+                var declineButtonShell = $rsvpComponent.find('.decline-button-shell');
+                var declineCheckbox = $('.js-rsvp-include-decline')[0];
+                declineCheckbox.checked = declineButtonShell.is(':visible');
+
                 var selectedGroupId = $rsvpComponent.find('.rsvp-group-id').val();
                 var selectedOccurrenceValue = $rsvpComponent.find('.rsvp-occurrence-value').val();
 
