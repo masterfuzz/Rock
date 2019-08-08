@@ -79,15 +79,6 @@ namespace RockWeb.Blocks.RSVP
             gRSVPItems.Actions.AddClick += gRSVPItems_Add;
         }
 
-        /// <summary>
-        /// Handles the Add event of the gRSVPItems control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void gRSVPItems_Add( object sender, EventArgs e )
-        {
-            NavigateToRSVPDetail();
-        }
 
         /// <summary>
         /// Raises the <see cref="E:System.Web.UI.Control.Load" /> event.
@@ -197,6 +188,16 @@ namespace RockWeb.Blocks.RSVP
         protected void gRSVPItems_GridRebind( object sender, EventArgs e )
         {
             BindRSVPItemsGrid();
+        }
+
+        /// <summary>
+        /// Handles the Add event of the gRSVPItems control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void gRSVPItems_Add( object sender, EventArgs e )
+        {
+            NavigateToRSVPDetail();
         }
 
         #endregion

@@ -53,16 +53,27 @@
                             <Rock:RockDropDownList ID="rddlLocation" runat="server" Label="Location" />
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <Rock:HtmlEditor ID="heAcceptMessage" runat="server" Toolbar="Light" Label="Custom Accept Message" />
+
+                    <Rock:PanelWidget ID="wpAdvanced" runat="server" Title="Advanced Settings">
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <Rock:HtmlEditor ID="heAcceptMessage" runat="server" Toolbar="Light" Label="Custom Accept Message" />
+                            </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-12">
-                            <Rock:HtmlEditor ID="heDeclineMessage" runat="server" Toolbar="Light" Label="Custom Decline Message" />
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <Rock:HtmlEditor ID="heDeclineMessage" runat="server" Toolbar="Light" Label="Custom Decline Message" />
+                            </div>
                         </div>
-                    </div>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <Rock:RockCheckBoxList ID="rcblAvailableDeclineReasons" runat="server" Label="Available Decline Reasons" />
+                            </div>
+                            <div class="col-sm-6">
+                                <Rock:RockCheckBox ID="rcbShowDeclineReasons" runat="server" Label="Show Decline Reasons" Checked="true" />
+                            </div>
+                        </div>
+                    </Rock:PanelWidget>
 
                     <div class="actions">
                         <asp:LinkButton ID="lbSaveOccurrence" runat="server" AccessKey="s" ToolTip="Alt+s" Text="Save" CssClass="btn btn-primary" OnClick="lbSaveOccurrence_Click" />
