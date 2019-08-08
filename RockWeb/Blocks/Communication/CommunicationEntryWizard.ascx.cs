@@ -701,11 +701,16 @@ namespace RockWeb.Blocks.Communication
             nbRecipientsAlert.Visible = false;
             if ( tglRecipientSelection.Checked )
             {
-                if ( !GetRecipientFromListSelection().Any() )
+                var recipients = GetRecipientFromListSelection();
+                if ( !recipients.Any() )
                 {
                     nbRecipientsAlert.Text = "The selected list doesn't have any people. <span>At least one recipient is required.</span>";
                     nbRecipientsAlert.Visible = true;
                     return;
+                }
+                else
+                {
+                    hfRSVPPersonIDs.Value = recipients.Select( m => m.PersonId ).ToList().AsDelimited( "," );
                 }
             }
             else
@@ -715,6 +720,10 @@ namespace RockWeb.Blocks.Communication
                     nbRecipientsAlert.Text = "At least one recipient is required.";
                     nbRecipientsAlert.Visible = true;
                     return;
+                }
+                else
+                {
+                    hfRSVPPersonIDs.Value = this.IndividualRecipientPersonIds.AsDelimited( "," );
                 }
             }
 
@@ -1367,7 +1376,6 @@ namespace RockWeb.Blocks.Communication
         {
             pnlEmailEditor.Visible = false;
             ShowEmailSummary();
-
         }
 
         /// <summary>

@@ -756,6 +756,15 @@
                                                         <option value=""></option>
                                                         <option value="1">Test Value</option>
 									                </select>
+								                </div>
+							                </div>
+							                <div class="col-md-12">
+								                <div class="form-group">
+                                                    <button id="component-rsvp-registerbutton" type="button" class="btn btn-default disabled">Register Recipients</button>
+                                                    <span class="js-rsvp-person-ids">
+                                                        <asp:HiddenField ID="hfRSVPPersonIDs" runat="server" Value="" />
+                                                    </span>
+
                                                     <asp:HiddenField ID="hfRSVPShowAdvancedSettings" runat="server" Value="false" />
                                                     <div class="pull-right">
                                                         <a href="#" class="btn btn-xs btn-link js-rsvp-show-advanced-settings disabled" >Show Advanced Settings</a>
@@ -800,7 +809,7 @@
 							                </div>
 							                <div class="col-md-3">
 								                <div class="form-group">
-                                                    <Rock:RockCheckBox ID="rcbIncludeDecline" runat="server" Label="Show Decline" Text="Yes" />
+                                                    <Rock:RockCheckBox ID="rcbIncludeDecline" runat="server" CssClass="js-rsvp-include-decline" Checked="true" Label="Show Decline" Text="Yes" />
 								                </div>
 							                </div>
                                         </div>

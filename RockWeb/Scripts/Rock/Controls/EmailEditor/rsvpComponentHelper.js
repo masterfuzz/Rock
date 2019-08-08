@@ -17,6 +17,13 @@
                     self.setOccurrence();
                 });
 
+                $('#component-rsvp-registerbutton').click(function (e) {
+                    self.registerRecipients();
+                });
+                $('.js-rsvp-include-decline').click(function (e) {
+                    self.toggleDeclineButton(e.target.checked);
+                });
+
                 $('#component-rsvp-accepttext').on('input', function (e) {
                     self.setAcceptButtonText();
                 });
@@ -54,6 +61,10 @@
                 });
             },
             setProperties: function ($rsvpComponent) {
+
+                var declineButtonShell = Rock.controls.emailEditor.$currentRsvpComponent.find('.decline-button-shell');
+                $('.js-rsvp-include-decline').checked = declineButtonShell.is(':visible')
+
                 Rock.controls.emailEditor.$currentRsvpComponent = $rsvpComponent;
                 var selectedGroupId = $rsvpComponent.find('.rsvp-group-id').val();
                 var selectedOccurrenceValue = $rsvpComponent.find('.rsvp-occurrence-value').val();
@@ -79,6 +90,7 @@
                 if ((selectedGroupId == '') || (selectedGroupId == '0')) {
                     $('.js-rsvp-advanced-settings').hide();
                     $('.js-rsvp-show-advanced-settings').addClass('disabled').text('Show Advanced Settings');
+                    $('#component-rsvp-registerbutton').addClass('disabled').text('Register Recipients');
                     $('#component-rsvp-occurrence').attr('disabled', 'disabled');
                     $('#component-rsvp-group .rsvp-group .js-item-id-value').val('');
                     $('#component-rsvp-group .rsvp-group .js-item-name-value').val('');
@@ -121,6 +133,7 @@
                 if ((groupId == '') || (groupId == '0')) {
                     $('.js-rsvp-advanced-settings').hide();
                     $('.js-rsvp-show-advanced-settings').addClass('disabled').text('Show Advanced Settings');
+                    $('#component-rsvp-registerbutton').addClass('disabled').text('Register Recipients');
                     $('#component-rsvp-occurrence').attr('disabled', 'disabled');
 
                     Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-group-id').val('');
@@ -177,7 +190,8 @@
                 var selectElement = $('#component-rsvp-occurrence');
                 // Loop through each of the results and append the option to the dropdown
 
-                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                var occurrencesAdded = false;
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                 for (var key in selectValues) {
                     var optionValue = selectValues[key];
                     var locationId = optionValue.split('|')[2];
@@ -185,21 +199,29 @@
                     var objDate = new Date(JSON.parse('"' + occurrenceDate + '"'))
                     //var displayValue = objDate.toLocaleString('default', { month: 'long' }) + ' ' + objDate.getDate() + ', ' + objDate.getFullYear() + ' (' + objDate.toLocaleTimeString() + ')';
                     var displayValue = monthNames[objDate.getMonth()] + ' ' + objDate.getDate() + ', ' + objDate.getFullYear() + ' (' + objDate.toLocaleTimeString() + ')';
-                    if (locationId && locationId != "null" && locationId != '') {
+                    if (locationId && locationId != 'null' && locationId != '') {
                         displayValue += ' - ' + locationTitles[locationId];
                     }
                     selectElement.append('<option value="' + optionValue + '">' + displayValue + '</option>');
+                    occurrencesAdded = true;
                 }
 
-                selectElement.val(selectedValue);
+                if (occurrencesAdded) {
+                    selectElement.val(selectedValue);
+                } else {
+                    selectElement.html('');
+                    selectElement.append('<option value="">The selected group does not have any occurrences scheduled.</option>');
+                }
 
             },
             getOccurrenceValues: function (groupId, selectedValue) {
                 if (selectedValue == '') {
                     $('.js-rsvp-advanced-settings').hide();
                     $('.js-rsvp-show-advanced-settings').addClass('disabled').text('Show Advanced Settings');
+                    $('#component-rsvp-registerbutton').addClass('disabled').text('Register Recipients');
                 } else {
                     $('.js-rsvp-show-advanced-settings').removeClass('disabled');
+                    $('#component-rsvp-registerbutton').removeClass('disabled')
                 }
 
                 // AJAX call to get occurrences.
@@ -218,9 +240,11 @@
                 if (occurrenceValue == '') {
                     $('.js-rsvp-advanced-settings').hide();
                     $('.js-rsvp-show-advanced-settings').addClass('disabled').text('Show Advanced Settings');
+                    $('#component-rsvp-registerbutton').addClass('disabled').text('Register Recipients');
                     Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-occurrence-value').val('');
                 } else {
                     $('.js-rsvp-show-advanced-settings').removeClass('disabled');
+                    $('#component-rsvp-registerbutton').removeClass('disabled');
 
                     var occurrenceValueParameters = occurrenceValue.split('|');
                     var occurrenceId = occurrenceValueParameters[0];
@@ -258,6 +282,25 @@
                 }
             },
 
+            registerRecipients: function () {
+                var restUrl = Rock.settings.get('baseUrl') + 'api/Attendances/RegisterRSVPRecipients'
+                    + '?occurrenceId=' + $('#component-rsvp-occurrence').val().split('|')[0]
+                    + '&personIds=' + encodeURIComponent($('.js-rsvp-person-ids input').val());
+
+                $('#component-rsvp-registerbutton').addClass('disabled').text('Registering ...');
+                $.ajax({
+                    url: restUrl,
+                    method: 'POST',
+                    success: function () {
+                        $('#component-rsvp-registerbutton').addClass('disabled').text('Recipients Registered!');
+                    },
+                    error: function () {
+                        $('#component-rsvp-registerbutton').removeClass('disabled').text('Error');
+                    }
+                });
+
+            },
+
             setAcceptButtonText: function () {
                 var text = $('#component-rsvp-accepttext').val();
                 Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-accept-link')
@@ -278,6 +321,14 @@
                 Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-decline-link')
                     .text(text)
                     .attr('title', text);
+            },
+            toggleDeclineButton: function (show) {
+                var declineButtonShell = Rock.controls.emailEditor.$currentRsvpComponent.find('.decline-button-shell');
+                if (show) {
+                    declineButtonShell.show();
+                } else {
+                    declineButtonShell.hide();
+                }
             },
             setDeclineButtonBackgroundColor: function () {
                 var color = $('#component-rsvp-declinebackgroundcolor').colorpicker('getValue');

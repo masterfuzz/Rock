@@ -462,6 +462,7 @@ namespace RockWeb.Blocks.RSVP
             if ( attendance == null )
             {
                 attendance = new Attendance();
+                attendance.OccurrenceId = occurrence.Id;
                 attendance.PersonAliasId = person.PrimaryAliasId;
                 attendance.StartDateTime = occurrence.Schedule != null && occurrence.Schedule.HasSchedule() ? occurrence.OccurrenceDate.Date.Add( occurrence.Schedule.StartTimeOfDay ) : occurrence.OccurrenceDate;
                 occurrence.Attendees.Add( attendance );
