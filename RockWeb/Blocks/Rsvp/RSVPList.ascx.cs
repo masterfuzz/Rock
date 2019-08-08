@@ -381,12 +381,12 @@ namespace RockWeb.Blocks.RSVP
             var groupService = new GroupService( rockContext );
             var group = groupService.Get( groupId );
 
-            int invitedCount = group.ActiveMembers().Count();
+            //int invitedCount = group.ActiveMembers().Count();
 
             // Get all the occurrences for this group for the selected dates, location and schedule
             var occurrences = new AttendanceOccurrenceService( rockContext )
                 .GetGroupOccurrences( group, fromDateTime, toDateTime, locationIds, scheduleIds )
-                .Select( o => new RSVPListOccurrence( o, invitedCount ) )
+                .Select( o => new RSVPListOccurrence( o ) )
                 .ToList();
 
 
@@ -607,7 +607,7 @@ namespace RockWeb.Blocks.RSVP
             }
         }
 
-        public RSVPListOccurrence( AttendanceOccurrence occurrence, int invitedCount )
+        public RSVPListOccurrence( AttendanceOccurrence occurrence )
         {
             this.Id = occurrence.Id;
             this.OccurrenceDate = occurrence.OccurrenceDate;
@@ -644,22 +644,23 @@ namespace RockWeb.Blocks.RSVP
 
             StartTime = occurrence.Schedule != null ? occurrence.Schedule.StartTimeOfDay : new TimeSpan();
 
-            this.InvitedCount = invitedCount;
-            this.NoResponseCount = InvitedCount;
             foreach ( var attendee in occurrence.Attendees )
             {
+                this.InvitedCount++;
+
                 if ( attendee.RSVP == Rock.Model.RSVP.Yes )
                 {
                     this.AcceptedCount++;
-                    this.NoResponseCount--;
                 }
                 if ( attendee.RSVP == Rock.Model.RSVP.No )
                 {
                     this.DeclinedCount++;
-                    this.NoResponseCount--;
+                }
+                else
+                {
+                    this.NoResponseCount++;
                 }
             }
-            this.NoResponseCount = Math.Max( 0, this.NoResponseCount );
         }
     }
 
