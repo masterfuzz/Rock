@@ -36,7 +36,7 @@
                                             <asp:HiddenField ID="hfGroupId" runat="server" Value='<%# Eval("GroupId") %>' />
                                             <asp:HiddenField ID="hfScheduleId" runat="server" Value='<%# Eval("ScheduleId") %>' />
                                             <asp:HiddenField ID="hfLocationId" runat="server" Value='<%# Eval("LocationId") %>' />
-                                            <div class="progress" style="max-width:145px;">
+                                            <div class="progress" style="width:145px;">
                                                 <div class="progress-bar progress-bar-success" role="progressbar" style="width: <%# Eval("AcceptedPercentage") %>%"></div>
                                                 <div class="progress-bar progress-bar-danger" role="progressbar" style="width: <%# Eval("DeclinedPercentage") %>%"></div>
                                             </div>
