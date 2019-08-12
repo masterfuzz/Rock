@@ -28,6 +28,7 @@ using Rock.Model;
 using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
+using Newtonsoft.Json;
 
 namespace RockWeb.Blocks.RSVP
 {
@@ -126,6 +127,15 @@ namespace RockWeb.Blocks.RSVP
             public const string IsAccept = "IsAccept";
         }
 
+        #region Properties
+
+        /// <summary>
+        /// Stores data collection for multiple occurrence responses.
+        /// </summary>
+        private List<OccurrenceDataItem> MultipleOccurrenceDataItems { get; set; }
+
+        #endregion
+
         #region Control Methods
 
         /// <summary>
@@ -135,6 +145,31 @@ namespace RockWeb.Blocks.RSVP
         protected override void OnInit( EventArgs e )
         {
             base.OnInit( e );
+
+            string script = @"
+$('input.rsvp-list-input').each(function () {
+    var $cbx = $(this)[0];
+
+    if ($cbx.checked) {
+        var $header = $(this).closest('header');
+        $header.siblings('.panel-body').show();
+    }
+});
+
+$('input.rsvp-list-input').on('click', function (e) {
+    var $cbx = $(this)[0];
+    var $header = $(this).closest('header');
+
+    if ($cbx.checked) {
+        $header.siblings('.panel-body').slideDown();
+    } else {
+        $header.siblings('.panel-body').slideUp();
+    }
+});
+
+
+";
+            ScriptManager.RegisterStartupScript(this.Page, this.Page.GetType(), "DefinedValueChecklistScript", script, true);
 
             lbAccept_Multiple.Text = GetAttributeValue( AttributeKey.AcceptButtonLabel );
             lbAccept_Single.Text = GetAttributeValue( AttributeKey.AcceptButtonLabel );
@@ -196,8 +231,7 @@ namespace RockWeb.Blocks.RSVP
                 var attendanceOccurrenceIdList = GetMultipleOccurrenceIds();
                 if ( attendanceOccurrenceIdList.Any() )
                 {
-                    // rebuild Multiple Occurrence Placeholders here so that postback values can be read.
-                    BuildMultipleOccurrenceControls( attendanceOccurrenceIdList, person );
+                    BindMultipleOccurrenceRepeater();
                 }
             }
         }
@@ -208,6 +242,46 @@ namespace RockWeb.Blocks.RSVP
         /// <param name="e">The <see cref="T:System.EventArgs" /> object that contains the event data.</param>
         protected override void OnLoad( EventArgs e )
         {
+            if ( Page.IsPostBack )
+            {
+                BindMultipleOccurrenceRepeater();
+            }
+        }
+
+        /// <summary>
+        /// Restores the view-state information from a previous user control request that was saved by the <see cref="M:System.Web.UI.UserControl.SaveViewState" /> method.
+        /// </summary>
+        /// <param name="savedState">An <see cref="T:System.Object" /> that represents the user control state to be restored.</param>
+        protected override void LoadViewState(object savedState)
+        {
+            base.LoadViewState(savedState);
+
+            string json = ViewState["MultipleOccurrenceDataItems"] as string;
+            if ( string.IsNullOrWhiteSpace( json ) )
+            {
+                MultipleOccurrenceDataItems = new List<OccurrenceDataItem>();
+            }
+            else
+            {
+                MultipleOccurrenceDataItems = JsonConvert.DeserializeObject<List<OccurrenceDataItem>>( json );
+            }
+        }
+
+        /// <summary>
+        /// Saves any user control view-state changes that have occurred since the last page postback.
+        /// </summary>
+        /// <returns>
+        /// Returns the user control's current view state. If there is no view state associated with the control, it returns null.
+        /// </returns>
+        protected override object SaveViewState()
+        {
+            var jsonSetting = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                ContractResolver = new Rock.Utility.IgnoreUrlEncodedKeyContractResolver()
+            };
+            ViewState["MultipleOccurrenceDataItems"] = JsonConvert.SerializeObject( MultipleOccurrenceDataItems, Formatting.None, jsonSetting );
+            return base.SaveViewState();
         }
 
         #endregion
@@ -258,7 +332,7 @@ namespace RockWeb.Blocks.RSVP
                 return;
             }
 
-            if ( string.IsNullOrWhiteSpace(PageParameter( PageParameterKey.PersonActionIdentifier ) ) ) 
+            if ( string.IsNullOrWhiteSpace( PageParameter( PageParameterKey.PersonActionIdentifier ) ) ) 
             {
                 UpdatePersonRecord();
             }
@@ -276,7 +350,8 @@ namespace RockWeb.Blocks.RSVP
                 {
                     var person = GetPerson();
                     var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
-                    var occurrence = attendanceOccurrenceService.Get(occurrenceId);
+                    var occurrence = attendanceOccurrenceService.Get( occurrenceId );
+                    person = new PersonService( rockContext ).Get( person.Guid );
                     UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.No, null, declineReason.Value, rtbDeclineNote.Text );
                 }
             }
@@ -291,7 +366,7 @@ namespace RockWeb.Blocks.RSVP
         private List<int> GetMultipleOccurrenceIds()
         {
             var attendanceOccurrenceIdList = new List<int>();
-            string attendanceOccurrenceIds = PageParameter( PageParameterKey.AttendanceOccurrenceId );
+            string attendanceOccurrenceIds = PageParameter( PageParameterKey.AttendanceOccurrenceIds );
             if ( !string.IsNullOrWhiteSpace( attendanceOccurrenceIds ) )
             {
                 try
@@ -336,8 +411,14 @@ namespace RockWeb.Blocks.RSVP
         /// <param name="PageTitle">The optional page title to display.</param>
         private void Show404( bool isExpired = false, string PageTitle = "" )
         {
-            Context.Response.StatusCode = 404;
+            //Context.Response.StatusCode = 404;
             pnl404.Visible = true;
+            pnlForm.Visible = false;
+            pnlMultiple_Accept.Visible = false;
+            pnlMultiple_Choice.Visible = false;
+            pnlSingle_Accept.Visible = false;
+            pnlSingle_Choice.Visible = false;
+            pnlSingle_Decline.Visible = false;
 
             if ( isExpired )
             {
@@ -371,7 +452,12 @@ namespace RockWeb.Blocks.RSVP
                 var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = attendanceOccurrenceService.Get( occurrenceId );
 
-                if ( occurrence.OccurrenceDate < DateTime.Now )
+                if ( occurrence == null )
+                {
+                    Show404();
+                    return;
+                }
+                else if ( occurrence.OccurrenceDate < DateTime.Now )
                 {
                     // This event has expired.
                     Show404( true, occurrence.EntityStringValue );
@@ -379,6 +465,7 @@ namespace RockWeb.Blocks.RSVP
                 }
 
                 lHeading.Text = occurrence.EntityStringValue;
+                pnlSingle_Choice.Visible = true;
 
                 var groupMember = occurrence.Group.Members.Where( gm => gm.PersonId == person.Id ).FirstOrDefault();
                 if ( groupMember == null )
@@ -421,18 +508,25 @@ namespace RockWeb.Blocks.RSVP
                 var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = attendanceOccurrenceService.Get( occurrenceId );
 
-                if ( occurrence.OccurrenceDate < DateTime.Now )
+                if ( occurrence == null )
                 {
-                    // This event has expired.
                     Show404();
                     return;
                 }
+                else if ( occurrence.OccurrenceDate < DateTime.Now )
+                {
+                    // This event has expired.
+                    Show404( true, occurrence.EntityStringValue );
+                    return;
+                }
 
+                person = new PersonService( rockContext ).Get( person.Guid );
                 UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.Yes );
 
                 // Show Single Occurrence Accept message.
                 pnlSingle_Accept.Visible = true;
                 pnlSingle_Choice.Visible = false;
+                pnlForm.Visible = false;
 
                 var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( RockPage, CurrentPerson );
                 if ( !string.IsNullOrEmpty( occurrence.AcceptConfirmationMessage ) )
@@ -505,13 +599,22 @@ namespace RockWeb.Blocks.RSVP
                 var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = attendanceOccurrenceService.Get( occurrenceId );
 
-                if ( occurrence.OccurrenceDate < DateTime.Now )
+                if ( occurrence == null )
                 {
-                    // This event has expired.
                     Show404();
                     return;
                 }
+                else if ( occurrence.OccurrenceDate < DateTime.Now )
+                {
+                    // This event has expired.
+                    Show404( true, occurrence.EntityStringValue );
+                    return;
+                }
 
+                pnlForm.Visible = false;
+                pnlSingle_Choice.Visible = false;
+
+                person = new PersonService(rockContext).Get(person.Guid);
                 UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.No );
                 hfDeclineReason_OccurrenceId.Value = occurrenceId.ToString();
 
@@ -553,6 +656,13 @@ namespace RockWeb.Blocks.RSVP
             }
         }
 
+        protected class OccurrenceDataItem
+        {
+            public string Title { get; set; }
+            public string OccurrenceId { get; set; }
+            public GroupMemberPublicAttriuteCollection PublicAttributes { get; set; }
+        };
+
         /// <summary>
         /// Shows the Accept/Decline options to allow RSVP for muiltiple occurrences.
         /// </summary>
@@ -578,8 +688,10 @@ namespace RockWeb.Blocks.RSVP
 
             bool hasValidOccurrences = false;
             bool isExpired = false;
+
             using ( var rockContext = new RockContext() )
             {
+                List<OccurrenceDataItem> repeaterItems = new List<OccurrenceDataItem>();
                 var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
                 foreach ( int occurrenceId in occurrenceIds )
                 {
@@ -591,103 +703,56 @@ namespace RockWeb.Blocks.RSVP
                         continue;
                     }
 
+                    // At least one occurrence is valid.
+                    hasValidOccurrences = true;
+
                     var groupMember = occurrence.Group.Members.Where( gm => gm.PersonId == person.Id ).FirstOrDefault();
                     if ( groupMember == null )
                     {
                         //Person is not a member of the group associated with this invitation.
-                        continue;
+                        groupMember = new GroupMember();
+                        groupMember.PersonId = person.Id;
+                        groupMember.GroupId = occurrence.Group.Id;
+                        groupMember.GroupRoleId = occurrence.Group.GroupType.DefaultGroupRoleId ?? 0;
+
+                        new GroupMemberService( rockContext ).Add( groupMember );
+                        rockContext.SaveChanges();
                     }
-
-                    RockCheckBox rcbAccept = new RockCheckBox()
-                    {
-                        ID = "rcbAccept",
-                        Text = occurrence.EntityStringValue
-                    };
-
-                    PanelWidget widget = new PanelWidget();
-                    widget.ID = "wOccurrence";
-                    widget.HeaderControls = new Control[1] { rcbAccept };
-
-                    HiddenField hfOccurrenceId = new HiddenField() { ID = "hfOccurrenceId", Value = occurrenceId.ToString() };
-                    widget.Controls.Add( hfOccurrenceId );
-
-                    PlaceHolder phOccurrenceAttributes = new PlaceHolder() { ID = "phOccurrenceAttributes" };
 
                     // This collection object is created to limit attribute values to those marked "IsPublic".
                     var publicAttributes = new GroupMemberPublicAttriuteCollection( groupMember );
-                    if ( publicAttributes.Attributes.Any() )
-                    {
-                        Helper.AddEditControls( publicAttributes, phOccurrenceAttributes, false, BlockValidationGroup );
-                    }
 
-                    widget.Controls.Add( phOccurrenceAttributes );
-                    phOccurrences.Controls.Add( widget );
+                    // Add item to collection for data binding.
+                    repeaterItems.Add(
+                        new OccurrenceDataItem()
+                        {
+                            Title = occurrence.EntityStringValue,
+                            OccurrenceId = occurrenceId.ToString(),
+                            PublicAttributes = publicAttributes
+                        } );
                 }
 
                 /// If no valid occurrences were found, display "Not Found" panel.
                 if ( !hasValidOccurrences )
                 {
                     Show404( isExpired, GetAttributeValue( AttributeKey.MultigroupModeRSVPTitle ) );
+                }
+                else
+                {
+                    pnlMultiple_Choice.Visible = true;
+                    MultipleOccurrenceDataItems = repeaterItems;
+                    BindMultipleOccurrenceRepeater();
                 }
             }
         }
 
         /// <summary>
-        /// Builds the dynamic controls for multiple occurrence RSVP.
+        /// Binds the repeater control for multiple occurrences.
         /// </summary>
-        /// <param name="occurrenceIds">The list of Occurrence IDs to display.</param>
-        /// <param name="person">The Person record.</param>
-        private void BuildMultipleOccurrenceControls( List<int> occurrenceIds, Person person )
+        private void BindMultipleOccurrenceRepeater()
         {
-            bool hasValidOccurrences = false;
-            bool isExpired = false;
-            using ( var rockContext = new RockContext() )
-            {
-                var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
-                foreach ( int occurrenceId in occurrenceIds )
-                {
-                    var occurrence = attendanceOccurrenceService.Get( occurrenceId );
-                    if ( occurrence.OccurrenceDate < DateTime.Now )
-                    {
-                        // This event has expired.
-                        isExpired = true;
-                        continue;
-                    }
-
-                    var groupMember = occurrence.Group.Members.Where( gm => gm.PersonId == person.Id ).FirstOrDefault();
-                    if ( groupMember == null )
-                    {
-                        //Person is not a member of the group associated with this invitation.
-                        continue;
-                    }
-
-                    RockCheckBox rcbAccept = new RockCheckBox()
-                    {
-                        ID = "rcbAccept",
-                        Text = occurrence.EntityStringValue
-                    };
-
-                    PlaceHolder phOccurrenceAttributes = new PlaceHolder() { ID = "phOccurrenceAttributes" };
-                    // This collection object is created to limit attribute values to those marked "IsPublic".
-                    var publicAttributes = new GroupMemberPublicAttriuteCollection( groupMember );
-                    if ( publicAttributes.Attributes.Any() )
-                    {
-                        Helper.AddEditControls( publicAttributes, phOccurrenceAttributes, false, BlockValidationGroup );
-                    }
-
-                    PanelWidget widget = new PanelWidget();
-                    widget.ID = "wOccurrence";
-                    widget.HeaderControls = new Control[1] { rcbAccept };
-                    widget.Controls.Add( phOccurrenceAttributes );
-                    phOccurrences.Controls.Add( widget );
-                }
-
-                /// If no valid occurrences were found, display "Not Found" panel.
-                if ( !hasValidOccurrences )
-                {
-                    Show404( isExpired, GetAttributeValue( AttributeKey.MultigroupModeRSVPTitle ) );
-                }
-            }
+            rptrValues.DataSource = MultipleOccurrenceDataItems;
+            rptrValues.DataBind();
         }
 
         /// <summary>
@@ -702,12 +767,12 @@ namespace RockWeb.Blocks.RSVP
                 _processedOccurrences = new List<string>();
                 bool occurrenceProcessed = false;
                 var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
-                foreach (Control control in phOccurrences.Controls)
+
+                foreach ( RepeaterItem item in rptrValues.Items )
                 {
-                    PanelWidget widget = control as PanelWidget;
-                    if ( widget != null )
+                    if ( ProcessOccurrence( person, item, rockContext) )
                     {
-                        occurrenceProcessed = ProcessOccurrence( person, widget, rockContext );
+                        occurrenceProcessed = true;
                     }
                 }
 
@@ -737,18 +802,19 @@ namespace RockWeb.Blocks.RSVP
         /// <param name="widget">The PanelWidget control.</param>
         /// <param name="rockContext">The RockContext.</param>
         /// <returns></returns>
-        private bool ProcessOccurrence( Person person, PanelWidget widget, RockContext rockContext )
+        private bool ProcessOccurrence( Person person, RepeaterItem item, RockContext rockContext )
         {
-            RockCheckBox rcbAccept = widget.FindControl( "rcbAccept" ) as RockCheckBox;
+            RockCheckBox rcbAccept = item.FindControl( "rcbAccept" ) as RockCheckBox;
             if ( rcbAccept.Checked )
             {
-                HiddenField hfOccurrenceId = widget.FindControl( "hfOccurrenceId" ) as HiddenField;
-                PlaceHolder phOccurrenceAttributes = widget.FindControl("phOccurrenceAttributes") as PlaceHolder;
+                HiddenField hfOccurrenceId = item.FindControl( "hfOccurrenceId" ) as HiddenField;
+                PlaceHolder phOccurrenceAttributes = item.FindControl( "phOccurrenceAttributes" ) as PlaceHolder;
 
                 int occurrenceId = int.Parse( hfOccurrenceId.Value );
                 var attendanceOccurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = attendanceOccurrenceService.Get( occurrenceId );
 
+                person = new PersonService( rockContext ).Get( person.Guid );
                 UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.Yes, phOccurrenceAttributes );
                 _processedOccurrences.Add( occurrence.EntityStringValue );
             }
@@ -797,6 +863,16 @@ namespace RockWeb.Blocks.RSVP
 
         #endregion
 
+
+        protected void rptrValues_ItemDataBound(object sender, RepeaterItemEventArgs e)
+        {
+            var dataItem = e.Item.DataItem as OccurrenceDataItem;
+            var phOccurrenceAttributes = e.Item.FindControl( "phOccurrenceAttributes" );
+            if ( dataItem.PublicAttributes.Attributes.Any() )
+            {
+                Helper.AddEditControls( dataItem.PublicAttributes, phOccurrenceAttributes, false, BlockValidationGroup );
+            }
+        }
     }
 
     #region Helper Class
@@ -906,6 +982,8 @@ namespace RockWeb.Blocks.RSVP
             groupMember.AttributeValues.Where( a => Attributes.Keys.Contains( a.Value.AttributeKey ) ).ToDictionary( a => a.Key, a => a.Value );
             AttributeValues = new Dictionary<string, AttributeValueCache>();
         }
+
+        public GroupMemberPublicAttriuteCollection() { }
     }
 
     #endregion

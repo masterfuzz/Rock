@@ -81,7 +81,22 @@
                 </asp:Panel>
 
                 <asp:Panel ID="pnlMultiple_Choice" runat="server" Visible="false">
-                    <asp:PlaceHolder ID="phOccurrences" runat="server" />
+
+                    <asp:Repeater ID="rptrValues" runat="server" OnItemDataBound="rptrValues_ItemDataBound">
+                        <ItemTemplate>
+                            <div class="defined-type-checklist">
+                                <article class="panel panel-widget checklist-item">
+                                    <header class="panel-heading clearfix">
+                                        <asp:HiddenField ID="hfOccurrenceId" runat="server" Value='<%# Eval("OccurrenceId") %>' />
+                                        <Rock:RockCheckBox ID="rcbAccept" runat="server" Text='<%# Eval("Title") %>' CssClass="rsvp-list-input" />
+                                    </header>
+                                    <div class="checklist-description panel-body" style="display: none;">
+                                        <asp:PlaceHolder ID="phOccurrenceAttributes" runat="server" />
+                                    </div>
+                                </article>
+                            </div>
+                        </ItemTemplate>
+                    </asp:Repeater>
                     
                     <div class="actions">
                         <asp:LinkButton ID="lbAccept_Multiple" runat="server" AccessKey="a" ToolTip="Alt+A" Text="Accept" CssClass="btn btn-primary" OnClick="lbAccept_Multiple_Click"  />
