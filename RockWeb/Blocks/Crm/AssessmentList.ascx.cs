@@ -76,7 +76,7 @@ namespace Rockweb.Blocks.Crm
 
     public partial class AssessmentList : Rock.Web.UI.RockBlock
     {
-        #region Atrribute Keys
+        #region Attribute Keys
         protected static class AttributeKey
         {
 
@@ -100,7 +100,7 @@ namespace Rockweb.Blocks.Crm
             /// </summary>
             public const string LavaTemplate = "LavaTemplate";
         }
-        #endregion Atrribute Keys
+        #endregion Attribute Keys
 
         #region constants
 

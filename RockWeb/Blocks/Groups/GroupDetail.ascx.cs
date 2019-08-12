@@ -58,7 +58,6 @@ namespace RockWeb.Blocks.Groups
     [BooleanField( "Prevent Selecting Inactive Campus", "Should inactive campuses be excluded from the campus field when editing a group?.", false, "", 14 )]
     [LinkedPage( "Group History Page", "The page to display group history.", false, "", "", 15 )]
 
-
     [LinkedPage( "Group Scheduler Page",
         Key = "GroupSchedulerPage",
         Description ="The page to schedule this group.",
@@ -71,9 +70,8 @@ namespace RockWeb.Blocks.Groups
         Description = "The page to manage RSVPs for this group.",
         IsRequired = false,
         Order = 17)]
-    
 
-    [BooleanField( "Enable Group Tags", "If enabled, the tags will be shown.", true, "", 17 )]
+    [BooleanField( "Enable Group Tags", "If enabled, the tags will be shown.", true, "", 18 )]
 
     [ContextAware( typeof(Group) )]
     public partial class GroupDetail : ContextEntityBlock, IDetailBlock

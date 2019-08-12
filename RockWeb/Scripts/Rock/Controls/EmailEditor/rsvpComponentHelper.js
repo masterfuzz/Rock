@@ -189,16 +189,16 @@
                 }
 
                 var selectElement = $('#component-rsvp-occurrence');
-                // Loop through each of the results and append the option to the dropdown
 
                 var occurrencesAdded = false;
                 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+                // Loop through each of the results and append the option to the dropdown
                 for (var key in selectValues) {
                     var optionValue = selectValues[key];
                     var locationId = optionValue.split('|')[2];
                     var occurrenceDate = optionValue.split('|')[4];
                     var objDate = new Date(JSON.parse('"' + occurrenceDate + '"'))
-                    //var displayValue = objDate.toLocaleString('default', { month: 'long' }) + ' ' + objDate.getDate() + ', ' + objDate.getFullYear() + ' (' + objDate.toLocaleTimeString() + ')';
                     var displayValue = monthNames[objDate.getMonth()] + ' ' + objDate.getDate() + ', ' + objDate.getFullYear() + ' (' + objDate.toLocaleTimeString() + ')';
                     if (locationId && locationId != 'null' && locationId != '') {
                         displayValue += ' - ' + locationTitles[locationId];

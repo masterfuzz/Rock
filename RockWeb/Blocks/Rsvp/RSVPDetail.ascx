@@ -42,7 +42,6 @@
                             </div>
                         </div>
                         <div class="col-sm-6">
-                            <!-- chart -->
                             <canvas id="doughnutChartCanvas" runat="server"></canvas>
                         </div>
                     </div>
