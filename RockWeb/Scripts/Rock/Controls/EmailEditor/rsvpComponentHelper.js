@@ -168,7 +168,7 @@
                     var callback = function (response) {
                         self.handleLocationTitleAjaxResponse(response, selectValues, selectedValue);
                     };
-                    restUrl = Rock.settings.get('baseUrl') + 'api/locations/GetLocationTitles?locationIds=' + locationIds;
+                    var restUrl = Rock.settings.get('baseUrl') + 'api/locations/GetLocationTitles?locationIds=' + locationIds;
                     $.ajax({
                         url: restUrl,
                         async: false,
@@ -182,7 +182,7 @@
             handleLocationTitleAjaxResponse: function (ajaxResult, selectValues, selectedValue) {
                 var locationTitles = {};
                 if (ajaxResult != '') {
-                    $.each(result, function (k, v) {
+                    $.each(ajaxResult, function (k, v) {
                         console.log(v);
                         locationTitles[k] = v;
                     });
