@@ -202,7 +202,13 @@ namespace RockWeb.Blocks.Event
                 var group = new GroupService( rockContext ).Get( groupId.Value );
                 var occurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = occurrenceService.Get(occurrenceId.Value);
-                SetupGroupLocationOptions( group, occurrence.Location, rockContext );
+
+                Location occurrenceLocation = null;
+                if ( occurrence != null )
+                {
+                    occurrenceLocation = occurrence.Location;
+                }
+                SetupGroupLocationOptions( group, occurrenceLocation, rockContext );
             }
 
             ShowDialog( "Locations" );
@@ -914,6 +920,8 @@ var dnutChart = new Chart(dnutCtx, {{
                 occurrence.DeclineReasonValueIds = selectedDeclineReasons.AsDelimited( "," );
 
                 rockContext.SaveChanges();
+
+                occurrence = occurrenceService.Get( occurrence.Id );
 
                 hfNewOccurrenceId.Value = occurrence.Id.ToString();
                 ShowDetails( rockContext, occurrence.Id, group );
