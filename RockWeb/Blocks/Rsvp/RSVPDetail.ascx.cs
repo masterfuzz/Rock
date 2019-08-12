@@ -44,18 +44,22 @@ namespace RockWeb.Blocks.Event
         Key = AttributeKey.DeclineReasonsType,
         DefaultValue = "F9FBD423-2832-48AA-8C33-95DFA6878BEC" )]
 
-    //ToDo:  Should this default value Guid be moved into Rock.SystemGuid?
     [DefinedValueField(
-        "GroupMeetingLocationType",
-        Key = AttributeKey.GroupMeetingLocationType,
-        DefaultValue = "96D540F5-071D-4BBD-9906-28F0A64D39C4" )]
+        "MapStyle",
+        Key = AttributeKey.MapStyle,
+        Description = "The style of maps to use for selecting locations.",
+        DefinedTypeGuid = Rock.SystemGuid.DefinedType.MAP_STYLES,
+        DefaultValue = Rock.SystemGuid.DefinedValue.MAP_STYLE_ROCK,
+        Order = 3 )]
 
     public partial class RSVPDetail : RockBlock
     {
+        #region Keys
+
         protected static class AttributeKey
         {
-            public const string GroupMeetingLocationType = "GroupMeetingLocationType";
             public const string DeclineReasonsType = "DeclineReasonsType";
+            public const string MapStyle = "MapStyle";
         }
 
         protected static class PageParameterKey
@@ -64,6 +68,23 @@ namespace RockWeb.Blocks.Event
             public const string OccurrenceId = "OccurrenceId";
             public const string OccurrenceDate = "OccurrenceDate";
         }
+
+        protected static class PageLabels
+        {
+            public const string MemberLocationTabTitle = "Member Location";
+            public const string OtherLocationTabTitle = "Other Location";
+        }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Tracks the currently active "Location Type" tab (Member Location or Other Location).
+        /// </summary>
+        private string LocationTypeTab { get; set; }
+
+        #endregion
 
         #region Control Methods
 
@@ -84,13 +105,20 @@ namespace RockWeb.Blocks.Event
         }
 
         /// <summary>
-        /// What to do if the block settings are changed.
+        /// Refreshes the block display in case the block settings are changed.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         protected void Block_BlockUpdated( object sender, EventArgs e )
         {
-            this.NavigateToCurrentPageReference();
+            var newLocationId = hfNewOccurrenceId.Value.AsIntegerOrNull();
+            if ( newLocationId != null )
+            {
+                // If a new location was created, pass the value to the page to show it after reloading.
+                NavigateToCurrentPageReference( new Dictionary<string, string> { { PageParameterKey.OccurrenceId, newLocationId.Value.ToString() } } );
+                return;
+            }
+            NavigateToCurrentPageReference();
         }
 
         /// <summary>
@@ -126,9 +154,109 @@ namespace RockWeb.Blocks.Event
             }
         }
 
+        /// <summary>
+        /// Restores the view-state information from a previous user control request that was saved by the <see cref="M:System.Web.UI.UserControl.SaveViewState" /> method.
+        /// </summary>
+        /// <param name="savedState">An <see cref="T:System.Object" /> that represents the user control state to be restored.</param>
+        protected override void LoadViewState( object savedState )
+        {
+            base.LoadViewState( savedState );
+            LocationTypeTab = ViewState["LocationTypeTab"] as string ?? PageLabels.MemberLocationTabTitle;
+        }
+
+        /// <summary>
+        /// Saves any user control view-state changes that have occurred since the last page postback.
+        /// </summary>
+        /// <returns>
+        /// Returns the user control's current view state. If there is no view state associated with the control, it returns null.
+        /// </returns>
+        protected override object SaveViewState()
+        {
+            ViewState["LocationTypeTab"] = LocationTypeTab;
+            return base.SaveViewState();
+        }
+
         #endregion
 
         #region Events
+
+        /// <summary>
+        /// Handles the Click event of the lbSelectLocation control.
+        /// </summary>
+        protected void lbSelectLocation_Click(object sender, EventArgs e)
+        {
+            int? occurrenceId = PageParameter( PageParameterKey.OccurrenceId ).AsIntegerOrNull();
+            if ( ( occurrenceId == null ) || ( occurrenceId == 0 ) )
+            {
+                // If the query string is 0, check to see if a new occurrence was already created.
+                occurrenceId = hfNewOccurrenceId.Value.AsIntegerOrNull();
+            }
+            if ( occurrenceId == null )
+            {
+                occurrenceId = 0;
+            }
+
+            using ( var rockContext = new RockContext() )
+            {
+                int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
+                var group = new GroupService( rockContext ).Get( groupId.Value );
+                var occurrenceService = new AttendanceOccurrenceService( rockContext );
+                var occurrence = occurrenceService.Get(occurrenceId.Value);
+                SetupGroupLocationOptions( group, occurrence.Location, rockContext );
+            }
+
+            ShowDialog( "Locations" );
+        }
+
+        /// <summary>
+        /// Handles the SaveClick event of the dlgLocations control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void dlgLocations_OkClick( object sender, EventArgs e )
+        {
+            if ( LocationTypeTab.Equals( PageLabels.MemberLocationTabTitle ) )
+            {
+                if ( ddlMember.SelectedValue != null )
+                {
+                    var ids = ddlMember.SelectedValue.Split( new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries ).AsIntegerList().ToArray();
+                    if ( ids.Length == 2 )
+                    {
+                        int locationId = ids[0];
+                        hfLocationId.Value = locationId.ToString();
+                        lLocationEdit.Text = ddlMember.SelectedItem.Text;
+                    }
+                }
+            }
+            else
+            {
+                if ( locpGroupLocation.Location != null )
+                {
+                    var selectedLocation = locpGroupLocation.Location;
+                    hfLocationId.Value = selectedLocation.Id.ToString();
+                    lLocationEdit.Text = selectedLocation.ToString();
+                }
+            }
+
+            HideDialog();
+        }
+
+        /// <summary>
+        /// Handles the Click event of the lbProperty control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
+        protected void lbLocationType_Click( object sender, EventArgs e )
+        {
+            LinkButton lb = sender as LinkButton;
+            if ( lb != null )
+            {
+                LocationTypeTab = lb.Text;
+                BindLocationTypeRepeater();
+            }
+
+            ShowSelectedPane();
+        }
 
         /// <summary>
         /// Handles the Click event of the lbSave control.
@@ -305,7 +433,6 @@ namespace RockWeb.Blocks.Event
             _availableDeclineReasons.Insert( 0, new DefinedValue() { Id = 0, Value = "" } );
         }
 
-
         /// <summary>
         /// Stores All Decline Reasons, for use in the occurrence edit panel.
         /// </summary>
@@ -340,7 +467,6 @@ namespace RockWeb.Blocks.Event
             _allDeclineReasons = values;
         }
 
-
         /// <summary>
         /// Display the RSVP etails of a specified occurrence.
         /// </summary>
@@ -349,6 +475,12 @@ namespace RockWeb.Blocks.Event
         /// <param name="group">The group the occurrence belongs to.</param>
         private void ShowDetails( RockContext rockContext, int occurrenceId, Group group )
         {
+            var groupType = GroupTypeCache.Get( group.GroupTypeId );
+            if ( group.ScheduleId != null )
+            {
+                spSchedule.SetValue( group.ScheduleId );
+            }
+
             if ( occurrenceId == 0 )
             {
                 ShowNewOccurrence();
@@ -406,39 +538,11 @@ namespace RockWeb.Blocks.Event
                 }
             }
 
-
-            //BUG - Get location and schedule details correctly.
-            Location location = null;
             if ( occurrence.LocationId.HasValue )
             {
-                location = occurrence.Location;
-            }
-            else
-            {
-                var locationTypeValue = DefinedValueCache.Get( GetAttributeValue( AttributeKey.GroupMeetingLocationType ) );
-                var groupLocations = group.GroupLocations
-                    .Where( gl => gl.GroupLocationTypeValueId == locationTypeValue.Id )
-                    .Select( gl => gl.LocationId );
-                var groupMeetingLocation = new LocationService( rockContext ).Queryable()
-                    .Where( l => groupLocations.Contains( l.Id ) )
-                    .AsNoTracking().FirstOrDefault();
-
-                if ( groupMeetingLocation != null )
-                {
-                    location = groupMeetingLocation;
-                }
-            }
-
-            if ( location != null )
-            {
-                if ( location.IsNamedLocation )
-                {
-                    lLocation.Text = location.Name;
-                }
-                else
-                {
-                    lLocation.Text = location.EntityStringValue;
-                }
+                lLocation.Text = occurrence.Location.ToString();
+                lLocationEdit.Text = occurrence.Location.ToString();
+                hfLocationId.Value = occurrence.LocationId.ToString();
             }
 
             if ( occurrence.Schedule == null )
@@ -456,6 +560,7 @@ namespace RockWeb.Blocks.Event
                 {
                     lSchedule.Text = occurrence.Schedule.EntityStringValue;
                 }
+                spSchedule.SetValue( occurrence.ScheduleId );
             }
 
             BindAttendeeGridAndChart();
@@ -618,7 +723,24 @@ var dnutChart = new Chart(dnutCtx, {{
         }
 
         /// <summary>
-        /// Save RSVP response data from grid.
+        /// Shows the selected pane.
+        /// </summary>
+        private void ShowSelectedPane()
+        {
+            if ( LocationTypeTab == PageLabels.MemberLocationTabTitle )
+            {
+                pnlMemberSelect.Visible = true;
+                pnlLocationSelect.Visible = false;
+            }
+            else if ( LocationTypeTab == PageLabels.OtherLocationTabTitle )
+            {
+                pnlMemberSelect.Visible = false;
+                pnlLocationSelect.Visible = true;
+            }
+        }
+
+        /// <summary>
+        /// Save RSVP response data from grid (to Attendance records).
         /// </summary>
         protected bool SaveRSVPData()
         {
@@ -686,7 +808,7 @@ var dnutChart = new Chart(dnutCtx, {{
                         {
                             attendance = new Attendance();
                             attendance.PersonAliasId = personAliasId;
-                            attendance.StartDateTime = occurrence.Schedule != null && occurrence.Schedule.HasSchedule() ? occurrence.OccurrenceDate.Date.Add(occurrence.Schedule.StartTimeOfDay ) : occurrence.OccurrenceDate;
+                            attendance.StartDateTime = occurrence.Schedule != null && occurrence.Schedule.HasSchedule() ? occurrence.OccurrenceDate.Date.Add( occurrence.Schedule.StartTimeOfDay ) : occurrence.OccurrenceDate;
                             occurrence.Attendees.Add( attendance );
                         }
                     }
@@ -697,21 +819,25 @@ var dnutChart = new Chart(dnutCtx, {{
                         {
                             attendance.RSVPDateTime = DateTime.Now;
                             attendance.RSVP = Rock.Model.RSVP.Yes;
+                            attendance.Note = string.Empty;
+                            attendance.DeclineReasonValueId = null;
                         }
                         else if ( attendee.Decline )
                         {
                             attendance.RSVPDateTime = DateTime.Now;
+                            attendance.RSVP = Rock.Model.RSVP.No;
+                            attendance.Note = attendee.DeclineNote;
                             if ( attendee.DeclineReason != 0 )
                             {
                                 attendance.DeclineReasonValueId = attendee.DeclineReason;
                             }
-                            attendance.Note = attendee.DeclineNote;
-                            attendance.RSVP = Rock.Model.RSVP.No;
                         }
                         else
                         {
                             attendance.RSVPDateTime = null;
                             attendance.RSVP = Rock.Model.RSVP.Unknown;
+                            attendance.Note = string.Empty;
+                            attendance.DeclineReasonValueId = null;
                         }
                     }
                 }
@@ -743,50 +869,60 @@ var dnutChart = new Chart(dnutCtx, {{
                 //Create new occurrence.
                 var attendanceOccurrence = new AttendanceOccurrence();
                 attendanceOccurrence.GroupId = groupId;
-                //attendanceOccurrence.LocationId = locationId;
-                //attendanceOccurrence.ScheduleId = scheduleId;
+
+                int? locationId = hfLocationId.Value.AsIntegerOrNull();
+                occurrence.LocationId = locationId;
+
+                attendanceOccurrence.ScheduleId = spSchedule.SelectedValueAsId();
+
                 if (dpOccurrenceDate.SelectedDate.HasValue)
                 {
                     occurrence.OccurrenceDate = dpOccurrenceDate.SelectedDate.Value;
                 }
 
+                var occurrenceService = new AttendanceOccurrenceService(rockContext);
 
-                //BUG - fix location and schedule selection.
+                //If this occurrence has already been created, just use the existing one.
+                var existingOccurrences = occurrenceService.Queryable()
+                    .Where( o => o.GroupId == occurrence.GroupId)
+                    .Where( o => o.OccurrenceDate == occurrence.OccurrenceDate)
+                    .Where( o => o.ScheduleId == occurrence.ScheduleId)
+                    .Where( o => o.LocationId == occurrence.LocationId)
+                    .ToList();
 
-                //Location location = null;
-                //var locationTypeValue = DefinedValueCache.Get( GetAttributeValue( AttributeKey.GroupMeetingLocationType ) );
-                //var groupLocations = group.GroupLocations
-                //    .Where( gl => gl.GroupLocationTypeValueId == locationTypeValue.Id )
-                //    .Select( gl => gl.LocationId );
+                if ( existingOccurrences.Any() )
+                {
+                    occurrence = existingOccurrences.FirstOrDefault();
+                }
+                else
+                {
+                    occurrenceService.Add( occurrence );
+                }
 
-                //var groupMeetingLocation = new LocationService( rockContext ).Queryable()
-                //    .Where( l => groupLocations.Contains( l.Id ) )
-                //    .AsNoTracking().FirstOrDefault();
-                //if ( groupMeetingLocation != null )
-                //{
-                //    location = groupMeetingLocation;
-                //}
+                occurrence.DeclineConfirmationMessage = heDeclineMessage.Text;
+                occurrence.AcceptConfirmationMessage = heAcceptMessage.Text;
+                occurrence.ShowDeclineReasons = rcbShowDeclineReasons.Checked;
 
-                //if ( location != null )
-                //{
-                //    occurrence.LocationId = location.Id;
-                //}
+                var selectedDeclineReasons = new List<string>();
+                foreach ( ListItem listItem in rcblAvailableDeclineReasons.Items )
+                {
+                    if ( listItem.Selected )
+                    {
+                        selectedDeclineReasons.Add( listItem.Value );
+                    }
+                }
+                occurrence.DeclineReasonValueIds = selectedDeclineReasons.AsDelimited( "," );
 
-                //if ( group.ScheduleId.HasValue )
-                //{
-                //    occurrence.ScheduleId = group.ScheduleId;
-                //    DateTime? occurrenceDate = group.Schedule.GetNextStartDateTime( DateTime.Now );
-                //}
-
-                var occurrenceService = new AttendanceOccurrenceService( rockContext );
-                occurrenceService.Add( occurrence );
                 rockContext.SaveChanges();
-                hfNewOccurrenceId.Value = occurrence.Id.ToString();
 
+                hfNewOccurrenceId.Value = occurrence.Id.ToString();
                 ShowDetails( rockContext, occurrence.Id, group );
             }
         }
 
+        /// <summary>
+        /// Saves changes to an existing AttendanceOccurrence record.
+        /// </summary>
         private void UpdateExistingOccurrence( int occurrenceId )
         {
             using ( var rockContext = new RockContext() )
@@ -797,9 +933,11 @@ var dnutChart = new Chart(dnutCtx, {{
                 var occurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = occurrenceService.Get( occurrenceId );
 
-                //BUG - set location and schedule selection.
-                //occurrence.LocationId = location.Id;
-                //occurrence.ScheduleId = group.ScheduleId;
+                int? locationId = hfLocationId.Value.AsIntegerOrNull();
+                occurrence.LocationId = locationId;
+
+                occurrence.ScheduleId = spSchedule.SelectedValueAsId();
+
                 if ( dpOccurrenceDate.SelectedDate.HasValue )
                 {
                     occurrence.OccurrenceDate = dpOccurrenceDate.SelectedDate.Value;
@@ -823,6 +961,203 @@ var dnutChart = new Chart(dnutCtx, {{
 
                 ShowDetails(rockContext, occurrence.Id, group);
             }
+        }
+
+        /// <summary>
+        /// Gets the CSS class for location tabs (used for switching active tabs).
+        /// </summary>
+        protected string GetLocationTabClass( object property )
+        {
+            if ( property.ToString() == LocationTypeTab )
+            {
+                return "active";
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Shows the dialog.
+        /// </summary>
+        /// <param name="dialog">The dialog.</param>
+        /// <param name="setValues">if set to <c>true</c> [set values].</param>
+        private void ShowDialog( string dialog, bool setValues = false )
+        {
+            hfActiveDialog.Value = dialog.ToUpper().Trim();
+            ShowDialog( setValues );
+        }
+
+        /// <summary>
+        /// Shows the dialog.
+        /// </summary>
+        /// <param name="setValues">if set to <c>true</c> [set values].</param>
+        private void ShowDialog( bool setValues = false )
+        {
+            switch ( hfActiveDialog.Value )
+            {
+                case "LOCATIONS":
+                    dlgLocations.Show();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Hides the dialog.
+        /// </summary>
+        private void HideDialog()
+        {
+            switch ( hfActiveDialog.Value )
+            {
+                case "LOCATIONS":
+                    dlgLocations.Hide();
+                    break;
+            }
+
+            hfActiveDialog.Value = string.Empty;
+        }
+
+        /// <summary>
+        /// Resets the location dialog.
+        /// </summary>
+        private void ResetLocationDialog()
+        {
+            locpGroupLocation.Location = null;
+            //nbEditModeMessage.Text = string.Empty;
+            //nbEditModeMessage.Visible = false;
+        }
+
+        /// <summary>
+        /// Sets up the location selection options based on the group settings.
+        /// </summary>
+        /// <param name="group">The group that this occurrence belongs to.</param>
+        /// <param name="occurrenceLocation">The existing location of the occurrence.  May be null.</param>
+        /// <param name="rockContext">The DbContext.</param>
+        private void SetupGroupLocationOptions( Group group, Location occurrenceLocation, RockContext rockContext )
+        {
+            ResetLocationDialog();
+            var groupType = GroupTypeCache.Get( group.GroupTypeId );
+
+            GroupLocationPickerMode groupTypeModes = groupType.LocationSelectionMode;
+            if ( groupTypeModes == GroupLocationPickerMode.None )
+            {
+                // Hide group location
+                return;
+            }
+
+            // Set the location picker modes allowed based on the group type's allowed modes
+            LocationPickerMode modes = LocationPickerMode.None;
+            if ( ( groupTypeModes & GroupLocationPickerMode.Named ) == GroupLocationPickerMode.Named )
+            {
+                modes = modes | LocationPickerMode.Named;
+            }
+
+            if ( ( groupTypeModes & GroupLocationPickerMode.Address ) == GroupLocationPickerMode.Address )
+            {
+                modes = modes | LocationPickerMode.Address;
+            }
+
+            if ( ( groupTypeModes & GroupLocationPickerMode.Point ) == GroupLocationPickerMode.Point )
+            {
+                modes = modes | LocationPickerMode.Point;
+            }
+
+            if ( ( groupTypeModes & GroupLocationPickerMode.Polygon ) == GroupLocationPickerMode.Polygon )
+            {
+                modes = modes | LocationPickerMode.Polygon;
+            }
+
+            bool displayMemberTab = ( groupTypeModes & GroupLocationPickerMode.GroupMember ) == GroupLocationPickerMode.GroupMember;
+            bool displayOtherTab = modes != LocationPickerMode.None;
+
+            ulNav.Visible = displayOtherTab && displayMemberTab;
+            pnlMemberSelect.Visible = displayMemberTab;
+            pnlLocationSelect.Visible = displayOtherTab && !displayMemberTab;
+
+            if ( displayMemberTab )
+            {
+                var personService = new PersonService( rockContext );
+                Guid previousLocationType = Rock.SystemGuid.DefinedValue.GROUP_LOCATION_TYPE_PREVIOUS.AsGuid();
+
+                ddlMember.Items.Add( new ListItem( string.Empty ) );
+                foreach ( GroupMember member in new GroupMemberService( rockContext ).GetByGroupId( group.Id ) )
+                {
+                    foreach ( Group family in personService.GetFamilies( member.PersonId ) )
+                    {
+                        foreach ( GroupLocation familyGroupLocation in family.GroupLocations
+                            .Where( l => l.IsMappedLocation && !l.GroupLocationTypeValue.Guid.Equals( previousLocationType ) ) )
+                        {
+                            ListItem li = new ListItem(
+                                string.Format( "{0} {1} ({2})", member.Person.FullName, familyGroupLocation.GroupLocationTypeValue.Value, familyGroupLocation.Location.ToString() ),
+                                string.Format( "{0}|{1}", familyGroupLocation.Location.Id, member.PersonId ) );
+
+                            ddlMember.Items.Add( li );
+                        }
+                    }
+                }
+            }
+
+            if ( displayOtherTab )
+            {
+                locpGroupLocation.AllowedPickerModes = modes;
+                locpGroupLocation.SetBestPickerModeForLocation( null );
+            }
+
+            GroupLocation groupLocation = null;
+            if ( occurrenceLocation != null )
+            {
+                groupLocation = group.GroupLocations
+                    .Where( l => l.Location.Guid.Equals( occurrenceLocation.Guid ) )
+                    .FirstOrDefault();
+            }
+
+            if ( groupLocation != null && groupLocation.Location != null )
+            {
+                if ( displayOtherTab )
+                {
+                    locpGroupLocation.SetBestPickerModeForLocation( groupLocation.Location );
+                    locpGroupLocation.MapStyleValueGuid = GetAttributeValue( "MapStyle" ).AsGuid();
+
+                    if ( groupLocation.Location != null )
+                    {
+                        locpGroupLocation.Location = new LocationService( rockContext ).Get( groupLocation.Location.Id );
+                    }
+                }
+
+                if ( displayMemberTab && ddlMember.Items.Count > 1 && groupLocation.GroupMemberPersonAliasId.HasValue )
+                {
+                    LocationTypeTab = PageLabels.MemberLocationTabTitle;
+                    int? personId = new PersonAliasService( rockContext ).GetPersonId( groupLocation.GroupMemberPersonAliasId.Value );
+                    if ( personId.HasValue )
+                    {
+                        ddlMember.SetValue( string.Format( "{0}|{1}", groupLocation.LocationId, personId.Value ) );
+                    }
+                }
+                else if ( displayOtherTab )
+                {
+                    LocationTypeTab = PageLabels.OtherLocationTabTitle;
+                }
+
+                hfAddLocationGroupGuid.Value = occurrenceLocation.Guid.ToString();
+            }
+            else
+            {
+                hfAddLocationGroupGuid.Value = string.Empty;
+                LocationTypeTab = ( displayMemberTab && ddlMember.Items.Count > 1 ) ? PageLabels.MemberLocationTabTitle : PageLabels.OtherLocationTabTitle;
+            }
+
+            BindLocationTypeRepeater();
+
+            ShowSelectedPane();
+            ShowDialog( "Locations", true );
+        }
+
+        /// <summary>
+        /// Creates and binds the DataSource for rptLocationTypes conrol.
+        /// </summary>
+        private void BindLocationTypeRepeater()
+        {
+            rptLocationTypes.DataSource = new List<string> { PageLabels.MemberLocationTabTitle, PageLabels.OtherLocationTabTitle };
+            rptLocationTypes.DataBind();
         }
 
         #endregion

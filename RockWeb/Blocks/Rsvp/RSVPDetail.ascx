@@ -1,7 +1,18 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="RSVPDetail.ascx.cs" Inherits="RockWeb.Blocks.Event.RSVPDetail" %>
 
+<script type="text/javascript">
+    function clearActiveDialog() {
+        $('#<%=hfActiveDialog.ClientID %>').val('');
+    }
+
+    Sys.Application.add_load(function () {
+        $('.js-follow-status').tooltip();
+    });
+</script>
+
 <asp:UpdatePanel ID="pnlContent" runat="server">
     <ContentTemplate>
+        <asp:HiddenField ID="hfActiveDialog" runat="server" />
         <asp:HiddenField ID="hfNewOccurrenceId" runat="server" />
 
         <div class="panel panel-block">
@@ -49,8 +60,12 @@
                         <div class="col-sm-6">
                             <Rock:SchedulePicker ID="spSchedule" runat="server" Label="Schedule" />
                         </div>
+                    </div>
+                    <div class="row">
                         <div class="col-sm-6">
-                            <Rock:RockDropDownList ID="rddlLocation" runat="server" Label="Location" />
+                            <asp:HiddenField ID="hfLocationId" runat="server" />
+                            <Rock:RockLiteral ID="lLocationEdit" runat="server" Label="Location" />
+                            <asp:LinkButton ID="lbSelectLocation" runat="server" AccessKey="l" ToolTip="Alt+l" Text="Select Location" CssClass="btn btn-primary" OnClick="lbSelectLocation_Click" />
                         </div>
                     </div>
 
@@ -129,10 +144,40 @@
 
                     <div class="actions">
                         <asp:LinkButton ID="lbSave" runat="server" AccessKey="s" ToolTip="Alt+s" Text="Save" CssClass="btn btn-primary" OnClick="lbSave_Click" CausesValidation="false" />
-                        <asp:LinkButton ID="lbCancel" runat="server" AccessKey="c" ToolTip="Alt+c" Text="Cancel" CssClass="btn btn-link" OnClick="lbCancel_Click" CausesValidation="false"></asp:LinkButton>
+                        <asp:LinkButton ID="lbCancel" runat="server" AccessKey="c" ToolTip="Alt+c" Text="Cancel" CssClass="btn btn-link" OnClick="lbCancel_Click" CausesValidation="false" />
                     </div>
 
             </div>
         </asp:Panel>
+
+        <!-- Group Location Modal Dialog -->
+        <Rock:ModalDialog ID="dlgLocations" runat="server" Title="Group Location" SaveButtonText="Ok" OnSaveClick="dlgLocations_OkClick" OnCancelScript="clearActiveDialog();" ValidationGroup="Location">
+            <Content>
+                <asp:HiddenField ID="hfAddLocationGroupGuid" runat="server" />
+                <asp:HiddenField ID="hfAction" runat="server" />
+
+                <asp:ValidationSummary ID="valLocationSummary" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" ValidationGroup="Location" />
+
+                <ul id="ulNav" runat="server" class="nav nav-pills">
+                    <asp:Repeater ID="rptLocationTypes" runat="server">
+                        <ItemTemplate>
+                            <li class='<%# GetLocationTabClass( Container.DataItem ) %>'>
+                                <asp:LinkButton ID="lbLocationType" runat="server" Text='<%# Container.DataItem %>' OnClick="lbLocationType_Click" CausesValidation="false" />
+                            </li>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                </ul>
+
+                <div class="tabContent">
+                    <asp:Panel ID="pnlMemberSelect" runat="server" Visible="true">
+                        <Rock:RockDropDownList ID="ddlMember" runat="server" Label="Member" ValidationGroup="Location" />
+                    </asp:Panel>
+                    <asp:Panel ID="pnlLocationSelect" runat="server" Visible="false">
+                        <Rock:LocationPicker ID="locpGroupLocation"  runat="server" Label="Location" ValidationGroup="Location" />
+                    </asp:Panel>
+                </div>
+            </Content>
+        </Rock:ModalDialog>
+
     </ContentTemplate>
 </asp:UpdatePanel>
