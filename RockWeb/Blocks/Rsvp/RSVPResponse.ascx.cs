@@ -354,6 +354,8 @@ $('input.rsvp-list-input').on('click', function (e) {
                     person = new PersonService( rockContext ).Get( person.Guid );
                     UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.No, null, declineReason.Value, rtbDeclineNote.Text );
                 }
+                pnlDeclineReasons.Visible = false;
+                pnlDeclineReasonConfirmation.Visible = true;
             }
         }
         #endregion

@@ -78,6 +78,9 @@
                             <asp:LinkButton ID="lbSaveDeclineReason" runat="server" AccessKey="s" ToolTip="Alt+S" Text="Save" CssClass="btn btn-primary" OnClick="lbSaveDeclineReason_Click" />
                         </div>
                     </asp:Panel>
+                    <asp:Panel ID="pnlDeclineReasonConfirmation" runat="server" Visible="false">
+                        <Rock:NotificationBox ID="nbDeclineReasonSaved" runat="server" NotificationBoxType="Success" Text="Saved." />
+                    </asp:Panel>
                 </asp:Panel>
 
                 <asp:Panel ID="pnlMultiple_Choice" runat="server" Visible="false">
