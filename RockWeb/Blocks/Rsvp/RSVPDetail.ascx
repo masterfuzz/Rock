@@ -52,19 +52,21 @@
                 </asp:Panel>
 
                 <asp:Panel ID="pnlEdit" runat="server">
+                    <Rock:NotificationBox ID="nbEditConflict" runat="server" NotificationBoxType="Danger" Text="Unable to edit occurrence because another occurrence already exists on the same date, with the same location and schedule" Visible="false" />
                     <div class="row">
                         <div class="col-sm-6">
                             <Rock:DatePicker ID="dpOccurrenceDate" runat="server" Label="Date" Required="true" />
                         </div>
                         <div class="col-sm-6">
-                            <Rock:SchedulePicker ID="spSchedule" runat="server" Label="Schedule" />
+                            <Rock:RockControlWrapper ID="rcwSchedule" runat="server" Label="Schedule" >
+                                <Rock:ScheduleBuilder ID="sbSchedule" runat="server" AllowMultiSelect="true" OnSaveSchedule="sbSchedule_SaveSchedule" />
+                                <asp:Literal ID="lScheduleText" runat="server" />
+                            </Rock:RockControlWrapper>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-sm-6">
-                            <asp:HiddenField ID="hfLocationId" runat="server" />
-                            <Rock:RockLiteral ID="lLocationEdit" runat="server" Label="Location" />
-                            <asp:LinkButton ID="lbSelectLocation" runat="server" AccessKey="l" ToolTip="Alt+l" Text="Select Location" CssClass="btn btn-primary" OnClick="lbSelectLocation_Click" />
+                            <Rock:LocationPicker ID="locpLocation"  runat="server" Label="Location" AllowedPickerModes="Named" />
                         </div>
                     </div>
 
@@ -148,35 +150,6 @@
 
             </div>
         </asp:Panel>
-
-        <!-- Group Location Modal Dialog -->
-        <Rock:ModalDialog ID="dlgLocations" runat="server" Title="Group Location" SaveButtonText="Ok" OnSaveClick="dlgLocations_OkClick" OnCancelScript="clearActiveDialog();" ValidationGroup="Location">
-            <Content>
-                <asp:HiddenField ID="hfAddLocationGroupGuid" runat="server" />
-                <asp:HiddenField ID="hfAction" runat="server" />
-
-                <asp:ValidationSummary ID="valLocationSummary" runat="server" HeaderText="Please correct the following:" CssClass="alert alert-validation" ValidationGroup="Location" />
-
-                <ul id="ulNav" runat="server" class="nav nav-pills">
-                    <asp:Repeater ID="rptLocationTypes" runat="server">
-                        <ItemTemplate>
-                            <li class='<%# GetLocationTabClass( Container.DataItem ) %>'>
-                                <asp:LinkButton ID="lbLocationType" runat="server" Text='<%# Container.DataItem %>' OnClick="lbLocationType_Click" CausesValidation="false" />
-                            </li>
-                        </ItemTemplate>
-                    </asp:Repeater>
-                </ul>
-
-                <div class="tabContent">
-                    <asp:Panel ID="pnlMemberSelect" runat="server" Visible="true">
-                        <Rock:RockDropDownList ID="ddlMember" runat="server" Label="Member" ValidationGroup="Location" />
-                    </asp:Panel>
-                    <asp:Panel ID="pnlLocationSelect" runat="server" Visible="false">
-                        <Rock:LocationPicker ID="locpGroupLocation"  runat="server" Label="Location" ValidationGroup="Location" />
-                    </asp:Panel>
-                </div>
-            </Content>
-        </Rock:ModalDialog>
 
     </ContentTemplate>
 </asp:UpdatePanel>
