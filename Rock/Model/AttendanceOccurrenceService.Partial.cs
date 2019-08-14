@@ -295,8 +295,20 @@ namespace Rock.Model
         /// <param name="locationIds">The location ids.</param>
         /// <param name="scheduleIds">The schedule ids.</param>
         /// <returns></returns>
-        public List<AttendanceOccurrence> GetFutureGroupOccurrences( Group group, DateTime? toDateTime, List<int> locationIds, List<int> scheduleIds )
+        public List<AttendanceOccurrence> GetFutureGroupOccurrences( Group group, DateTime? toDateTime, string locationIds = null, string scheduleIds = null )
         {
+            var locationIdList = new List<int>();
+            if ( !string.IsNullOrWhiteSpace( locationIds ) )
+            {
+                locationIdList = locationIds.Split( ',' ).Select( int.Parse ).ToList();
+            }
+
+            var scheduleIdList = new List<int>();
+            if ( !string.IsNullOrWhiteSpace( scheduleIds ) )
+            {
+                scheduleIdList = scheduleIds.Split( ',' ).Select( int.Parse ).ToList();
+            }
+
             var qry = Queryable().AsNoTracking().Where( a => a.GroupId == group.Id );
 
             // Filter by date range
@@ -313,13 +325,13 @@ namespace Rock.Model
             // Location Filter
             if ( locationIds.Any() )
             {
-                qry = qry.Where( a => locationIds.Contains( a.LocationId ?? 0 ) );
+                qry = qry.Where( a => locationIdList.Contains( a.LocationId ?? 0 ) );
             }
 
             // Schedule Filter
             if ( scheduleIds.Any() )
             {
-                qry = qry.Where( a => scheduleIds.Contains( a.ScheduleId ?? 0 ) );
+                qry = qry.Where( a => scheduleIdList.Contains( a.ScheduleId ?? 0 ) );
             }
 
             var occurrences = qry.ToList();

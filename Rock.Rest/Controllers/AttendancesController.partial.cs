@@ -244,53 +244,13 @@ namespace Rock.Rest.Controllers
         /// </summary>
         /// <param name="occurrenceId">The ID of the AttendanceOccurrence record.</param>
         /// <param name="personIds">A comma-delimited list of Person IDs.</param>
-        /// <returns></returns>
         [Authenticate, Secured]
         [System.Web.Http.Route( "api/Attendances/RegisterRSVPRecipients" )]
         [HttpPost]
         public void RegisterRSVPRecipients( int occurrenceId, string personIds )
         {
-            var personIdList = personIds.Split( ',' ).Select( int.Parse ).ToList();
-            using ( var rockContext = new RockContext() )
-            {
-                // Get Occurrence.
-                var occurrence = new AttendanceOccurrenceService( rockContext ).Queryable().AsNoTracking()
-                    .Where( o => o.Id == occurrenceId ).FirstOrDefault();
-                DateTime startDateTime = occurrence.Schedule != null && occurrence.Schedule.HasSchedule() ? occurrence.OccurrenceDate.Date.Add( occurrence.Schedule.StartTimeOfDay ) : occurrence.OccurrenceDate;
-
-                // Get PersonAliasIDs from PersonIDs
-                var people = new PersonService( rockContext ).Queryable().AsNoTracking()
-                    .Where( p => personIdList.Contains( p.Id ) )
-                    .ToList();
-                var personAliasIds = people.Select( p => p.PrimaryAliasId ).ToList();
-
-                // Check for existing records.
-                var attendanceService = new AttendanceService( rockContext );
-                var existingAttendanceRecords = attendanceService.Queryable().AsNoTracking()
-                        .Where( a => personAliasIds.Contains( a.PersonAliasId ) )
-                        .Where( a => a.OccurrenceId == occurrenceId )
-                        .ToList();
-
-                var newAttendanceRecords = new List<Attendance>();
-                foreach ( int personAliasId in personAliasIds )
-                {
-                    // If record doesn't exist, create a new attendance record and set RSVP to "Unknown".
-                    if ( !existingAttendanceRecords.Where( a => a.PersonAliasId == personAliasId ).Any() )
-                    {
-                        newAttendanceRecords.Add(
-                            new Attendance()
-                            {
-                                OccurrenceId = occurrenceId,
-                                PersonAliasId = personAliasId,
-                                StartDateTime = startDateTime,
-                                RSVP = Rock.Model.RSVP.Unknown
-                            });
-                    }
-                }
-
-                attendanceService.AddRange( newAttendanceRecords );
-                rockContext.SaveChanges();
-            }
+            new AttendanceService( new RockContext() )
+                .RegisterRSVPRecipients( occurrenceId, personIds );
         }
 
 
