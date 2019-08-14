@@ -546,8 +546,13 @@ namespace RockWeb.Blocks.Event
 
             if ( occurrence.LocationId.HasValue )
             {
-                lLocation.Text = occurrence.Location.ToString();
-                lLocationEdit.Text = occurrence.Location.ToString();
+                var location = occurrence.Location;
+                if ( location == null )
+                {
+                    location = new LocationService( rockContext ).Get( occurrence.LocationId.Value );
+                }
+                lLocation.Text = location.ToString();
+                lLocationEdit.Text = location.ToString();
                 hfLocationId.Value = occurrence.LocationId.ToString();
             }
 
