@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="RSVPDetail.ascx.cs" Inherits="RockWeb.Blocks.Event.RSVPDetail" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="RsvpDetail.ascx.cs" Inherits="RockWeb.Blocks.RSVP.RSVPDetail" %>
 
 <script type="text/javascript">
     function clearActiveDialog() {

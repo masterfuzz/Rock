@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="RSVPList.ascx.cs" Inherits="RockWeb.Blocks.RSVP.RSVPList" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="RsvpList.ascx.cs" Inherits="RockWeb.Blocks.RSVP.RSVPList" %>
 
 <asp:UpdatePanel ID="upList" runat="server">
     <ContentTemplate>

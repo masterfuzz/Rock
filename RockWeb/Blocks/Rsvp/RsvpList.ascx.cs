@@ -32,7 +32,7 @@ namespace RockWeb.Blocks.RSVP
     /// <summary>
     /// Lists all the event items in the given calendar.
     /// </summary>
-    [DisplayName( "RSVP Occurrences List" )]
+    [DisplayName( "RSVP List" )]
     [Category( "RSVP" )]
     [Description( "Lists RSVP Occurrences." )]
 

@@ -29,7 +29,7 @@ using Rock.Web.Cache;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 
-namespace RockWeb.Blocks.Event
+namespace RockWeb.Blocks.RSVP
 {
     /// <summary>
     /// Displays the details of the given RSVP occurrence.
