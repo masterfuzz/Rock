@@ -472,7 +472,13 @@ $('input.rsvp-list-input').on('click', function (e) {
                 var groupMember = occurrence.Group.Members.Where( gm => gm.PersonId == person.Id ).FirstOrDefault();
                 if ( groupMember == null )
                 {
-                    throw new Exception( "Person is not a member of the group associated with this invitation." );
+                    groupMember = new GroupMember();
+                    groupMember.PersonId = person.Id;
+                    groupMember.GroupId = occurrence.Group.Id;
+                    groupMember.GroupRoleId = occurrence.Group.GroupType.DefaultGroupRoleId ?? 0;
+
+                    new GroupMemberService( rockContext ).Add( groupMember );
+                    rockContext.SaveChanges();
                 }
 
                 bool displayForm = GetAttributeValue( AttributeKey.DisplayFormWhenSignedIn ).AsBoolean();
@@ -581,7 +587,13 @@ $('input.rsvp-list-input').on('click', function (e) {
                 var groupMember = occurrence.Group.Members.Where( gm => gm.PersonId == person.Id ).FirstOrDefault();
                 if ( groupMember == null )
                 {
-                    throw new Exception( "Person is not a member of the group associated with this invitation." );
+                    groupMember = new GroupMember();
+                    groupMember.PersonId = person.Id;
+                    groupMember.GroupId = occurrence.Group.Id;
+                    groupMember.GroupRoleId = occurrence.Group.GroupType.DefaultGroupRoleId ?? 0;
+
+                    new GroupMemberService( rockContext ).Add( groupMember );
+                    rockContext.SaveChanges();
                 }
                 Helper.GetEditValues( phAttributes, groupMember );
             }
