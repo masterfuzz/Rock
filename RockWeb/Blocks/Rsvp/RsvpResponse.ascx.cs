@@ -495,6 +495,8 @@ $('input.rsvp-list-input').on('click', function (e) {
                 rtbLastName.Text = person.LastName;
                 rebEmail.Text = person.Email;
 
+                groupMember.LoadAttributes();
+
                 // This collection object is created to limit attribute values to those marked "IsPublic".
                 var publicAttributes = new GroupMemberPublicAttriuteCollection( groupMember );
                 if ( publicAttributes.Attributes.Any() )
@@ -595,6 +597,9 @@ $('input.rsvp-list-input').on('click', function (e) {
                     new GroupMemberService( rockContext ).Add( groupMember );
                     rockContext.SaveChanges();
                 }
+
+                groupMember.LoadAttributes();
+
                 Helper.GetEditValues( phAttributes, groupMember );
             }
 
@@ -732,6 +737,8 @@ $('input.rsvp-list-input').on('click', function (e) {
                         new GroupMemberService( rockContext ).Add( groupMember );
                         rockContext.SaveChanges();
                     }
+
+                    groupMember.LoadAttributes();
 
                     // This collection object is created to limit attribute values to those marked "IsPublic".
                     var publicAttributes = new GroupMemberPublicAttriuteCollection( groupMember );
