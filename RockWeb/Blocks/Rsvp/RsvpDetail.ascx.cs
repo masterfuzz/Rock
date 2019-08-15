@@ -40,12 +40,12 @@ namespace RockWeb.Blocks.RSVP
 
     //ToDo:  This should be the GUID of the Decline Reasons type which should probably be created in a migration.
     [DefinedTypeField(
-        "DeclineReasonsType",
+        "Decline Reasons Type",
         Key = AttributeKey.DeclineReasonsType,
         DefaultValue = "F9FBD423-2832-48AA-8C33-95DFA6878BEC" )]
 
     [DefinedValueField(
-        "MapStyle",
+        "Map Style",
         Key = AttributeKey.MapStyle,
         Description = "The style of maps to use for selecting locations.",
         DefinedTypeGuid = Rock.SystemGuid.DefinedType.MAP_STYLES,
