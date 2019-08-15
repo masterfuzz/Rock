@@ -653,7 +653,7 @@ namespace RockWeb.Blocks.RSVP
                 {
                     this.AcceptedCount++;
                 }
-                if ( attendee.RSVP == Rock.Model.RSVP.No )
+                else if ( attendee.RSVP == Rock.Model.RSVP.No )
                 {
                     this.DeclinedCount++;
                 }
