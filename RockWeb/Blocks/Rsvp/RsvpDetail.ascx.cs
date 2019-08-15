@@ -569,7 +569,8 @@ namespace RockWeb.Blocks.RSVP
                 // Add RSVP responses for anyone who has an attendance record, already.
                 var occurrenceService = new AttendanceOccurrenceService( rockContext );
                 var occurrence = occurrenceService.Get( occurrenceId.Value );
-                foreach ( var attendee in occurrence.Attendees )
+                var sortedAttendees = occurrence.Attendees.OrderBy( a => a.PersonAlias.Person.LastName ).ThenBy( a => a.PersonAlias.Person.FirstName );
+                foreach ( var attendee in sortedAttendees )
                 {
                     RSVPAttendee rsvp = new RSVPAttendee();
                     rsvp.PersonId = attendee.PersonAlias.PersonId;
@@ -583,31 +584,6 @@ namespace RockWeb.Blocks.RSVP
                     existingAttendanceRecords.Add( attendee.PersonAlias.PersonId );
                 }
             }
-
-            //// Add any existing active members not on that list
-            //int? groupId = PageParameter( PageParameterKey.GroupId ).AsIntegerOrNull();
-            //var groupMemberService = new GroupMemberService( rockContext );
-
-            //var groupMembersWithoutAttendance = groupMemberService
-            //    .Queryable( "Person" ).AsNoTracking()
-            //    .Where(m =>
-            //       m.GroupId == groupId &&
-            //       m.GroupMemberStatus == GroupMemberStatus.Active &&
-            //       !existingAttendanceRecords.Contains(m.PersonId))
-            //    .ToList();
-
-            //foreach (var groupMember in groupMembersWithoutAttendance)
-            //{
-            //    RSVPAttendee rsvp = new RSVPAttendee();
-            //    rsvp.PersonId = groupMember.PersonId;
-            //    rsvp.NickName = groupMember.Person.NickName;
-            //    rsvp.LastName = groupMember.Person.LastName;
-            //    rsvp.Accept = false;
-            //    rsvp.Decline = false;
-            //    rsvp.DeclineReason = null;
-            //    rsvp.DeclineNote = string.Empty;
-            //    attendees.Add( rsvp );
-            //}
 
             return attendees;
         }
