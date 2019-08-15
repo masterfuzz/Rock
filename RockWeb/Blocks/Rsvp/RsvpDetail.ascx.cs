@@ -550,6 +550,11 @@ namespace RockWeb.Blocks.RSVP
 
                 gAttendees.DataSource = attendees;
                 gAttendees.DataBind();
+
+                if ( attendees.Count() < 1 )
+                {
+                    lbSave.Visible = false;
+                }
             }
         }
 
