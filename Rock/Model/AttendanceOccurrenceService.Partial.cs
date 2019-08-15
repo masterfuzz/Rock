@@ -323,13 +323,13 @@ namespace Rock.Model
                 .Where( a => a.OccurrenceDate < ( toDate ) );
 
             // Location Filter
-            if ( locationIds != null && locationIds.Any() )
+            if ( locationIdList.Any() )
             {
                 qry = qry.Where( a => locationIdList.Contains( a.LocationId ?? 0 ) );
             }
 
             // Schedule Filter
-            if ( scheduleIds != null && scheduleIds.Any() )
+            if ( scheduleIdList.Any() )
             {
                 qry = qry.Where( a => scheduleIdList.Contains( a.ScheduleId ?? 0 ) );
             }
