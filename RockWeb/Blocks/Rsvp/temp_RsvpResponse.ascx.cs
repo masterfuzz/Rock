@@ -35,7 +35,7 @@ namespace RockWeb.Blocks.RSVP
     /// <summary>
     /// Displays the details of the given RSVP occurrence.
     /// </summary>
-    [DisplayName( "RSVP Response Block" )]
+    [DisplayName( "RSVP Response" )]
     [Category( "RSVP" )]
     [Description( "Allowes invited people to RSVP for one or more Attendane Occurrences." )]
 

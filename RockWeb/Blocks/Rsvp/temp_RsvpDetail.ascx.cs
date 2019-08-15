@@ -34,7 +34,7 @@ namespace RockWeb.Blocks.Event
     /// <summary>
     /// Displays the details of the given RSVP occurrence.
     /// </summary>
-    [DisplayName( "RSVP Occurrence Detail" )]
+    [DisplayName( "RSVP Detail" )]
     [Category( "RSVP" )]
     [Description( "Shows detailed RSVP information for a specific occurrence and allows editing RSVP details." )]
 
