@@ -327,8 +327,10 @@
                 var declineButtonShell = Rock.controls.emailEditor.$currentRsvpComponent.find('.decline-button-shell');
                 if (show) {
                     declineButtonShell.show();
+                    $(declineButtonShell).parent().attr("style", "padding-left: 10px;")
                 } else {
                     declineButtonShell.hide();
+                    $(declineButtonShell).parent().removeAttr("style")
                 }
             },
             setDeclineButtonBackgroundColor: function () {
