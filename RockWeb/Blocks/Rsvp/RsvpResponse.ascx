@@ -65,7 +65,7 @@
                     <asp:Panel ID="pnlDeclineReasons" runat="server" Visible="false">
                         <div class="row">
                             <div class="col-md-12">
-                                <Rock:RockRadioButtonList ID="rrblDeclineReasons" runat="server" Label="Please enter a reason below:" Required="true" />
+                                <Rock:RockRadioButtonList ID="rrblDeclineReasons" runat="server" Label="Please enter a reason below:" Required="true" DataTextField="Value" DataValueField="Id" />
                             </div>
                         </div>
                         <div class="row">
