@@ -57,7 +57,7 @@ namespace Rock.Rest.Controllers
         [System.Web.Http.Route("api/AttendanceOccurrences/CreateGroupOccurrence")]
         public AttendanceOccurrence CreateGroupOccurrence( int groupId, DateTime occurrenceDate, int? scheduleId = null, int? locationId = null )
         {
-            return new AttendanceOccurrenceService( new RockContext () ).GetOrAdd( occurrenceDate, scheduleId, locationId, groupId );
+            return new AttendanceOccurrenceService( new RockContext () ).GetOrAdd( occurrenceDate, groupId, locationId, scheduleId );
         }
 
     }
