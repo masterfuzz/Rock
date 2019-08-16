@@ -228,6 +228,11 @@ $('input.rsvp-list-input').on('click', function (e) {
             }
             else
             {
+                var attendanceOccurrenceId = PageParameter( PageParameterKey.AttendanceOccurrenceId ).AsIntegerOrNull();
+                if ( attendanceOccurrenceId != null )
+                {
+                    BuildAttributeControls();
+                }
                 var attendanceOccurrenceIdList = GetMultipleOccurrenceIds();
                 if ( attendanceOccurrenceIdList.Any() )
                 {
@@ -506,6 +511,22 @@ $('input.rsvp-list-input').on('click', function (e) {
             }
         }
 
+        private void BuildAttributeControls()
+        {
+            using (var rockContext = new RockContext())
+            {
+                var person = GetPerson();
+                var occurrenceId = PageParameter( PageParameterKey.AttendanceOccurrenceId ).AsInteger();
+                var occurrence = new AttendanceOccurrenceService( rockContext ).Get( occurrenceId );
+                var groupMember = occurrence.Group.Members.Where( gm => gm.PersonId == person.Id ).FirstOrDefault();
+                var publicAttributes = new GroupMemberPublicAttriuteCollection( groupMember );
+                if ( publicAttributes.Attributes.Any() )
+                {
+                    Helper.AddEditControls( publicAttributes, phAttributes, false, BlockValidationGroup );
+                }
+            }
+        }
+
         /// <summary>
         /// Shows the RSVP Accept message for a single occurrence.
         /// </summary>
@@ -531,7 +552,7 @@ $('input.rsvp-list-input').on('click', function (e) {
                 }
 
                 person = new PersonService( rockContext ).Get( person.Guid );
-                UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.Yes );
+                UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.Yes, phAttributes );
 
                 // Show Single Occurrence Accept message.
                 pnlSingle_Accept.Visible = true;
@@ -601,6 +622,8 @@ $('input.rsvp-list-input').on('click', function (e) {
                 groupMember.LoadAttributes();
 
                 Helper.GetEditValues( phAttributes, groupMember );
+
+                groupMember.SaveAttributeValues();
             }
 
             rockContext.SaveChanges();
