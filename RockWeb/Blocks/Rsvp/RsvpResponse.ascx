@@ -26,15 +26,15 @@
 
                 <asp:Panel ID="pnlForm" runat="server" Visible="false">
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-sm-6">
                             <Rock:RockTextBox ID="rtbFirstName" runat="server" Label="First Name" />
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-sm-6">
                             <Rock:RockTextBox ID="rtbLastName" runat="server" Label="Last Name" />
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-sm-12">
                             <Rock:EmailBox ID="rebEmail" runat="server" Label="Email Address" />
                         </div>
                     </div>
@@ -42,7 +42,7 @@
 
                 <asp:Panel ID="pnlSingle_Choice" runat="server" Visible="false">
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-sm-12">
                             <asp:PlaceHolder ID="phAttributes" runat="server" />
                         </div>
                     </div>
@@ -58,18 +58,18 @@
 
                 <asp:Panel ID="pnlSingle_Decline" runat="server" Visible="false">
                     <div class="row">
-                        <div class="col-md-12">
+                        <div class="col-sm-12">
                             <Rock:NotificationBox ID="nbDecline" runat="server" NotificationBoxType="Warning" />
                         </div>
                     </div>
                     <asp:Panel ID="pnlDeclineReasons" runat="server" Visible="false">
                         <div class="row">
-                            <div class="col-md-12">
+                            <div class="col-sm-12">
                                 <Rock:RockRadioButtonList ID="rrblDeclineReasons" runat="server" Label="Please enter a reason below:" Required="true" DataTextField="Value" DataValueField="Id" />
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-12">
+                            <div class="col-sm-12">
                                 <Rock:RockTextBox ID="rtbDeclineNote" runat="server" MaxLength="255" Label="Note" />
                             </div>
                         </div>
