@@ -201,7 +201,16 @@ $('input.rsvp-list-input').on('click', function (e) {
                     // Using a single occurrece.
                     if ( isAccept )
                     {
-                        ShowSingleOccurrence_Accept( attendanceOccurrenceId.Value, person );
+                        if ( GroupHasAttributes() )
+                        {
+                            // If the group has GroupMember attributes, write the RSVP but show the decision form.
+                            WriteEmailAcceptResponse( attendanceOccurrenceId.Value, person );
+                            ShowSingleOccurrence_Choice( attendanceOccurrenceId.Value, person );
+                        }
+                        else
+                        {
+                            ShowSingleOccurrence_Accept( attendanceOccurrenceId.Value, person );
+                        }
                     }
                     else if ( isDecline )
                     {
@@ -368,6 +377,20 @@ $('input.rsvp-list-input').on('click', function (e) {
         #region Internal Methods
 
         /// <summary>
+        /// Writes the email accept response when it's necessary to show the choice form.
+        /// </summary>
+        /// <param name="occurrenceId"></param>
+        /// <param name="person"></param>
+        private void WriteEmailAcceptResponse( int occurrenceId, Person person )
+        {
+            using ( var rockContext = new RockContext() )
+            {
+                var occurrence = new AttendanceOccurrenceService( rockContext ).Get( occurrenceId );
+                UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.Yes );
+            }
+        }
+
+        /// <summary>
         /// Gets the list of Occurrence IDs from the query string.
         /// </summary>
         private List<int> GetMultipleOccurrenceIds()
@@ -448,6 +471,16 @@ $('input.rsvp-list-input').on('click', function (e) {
         }
 
         /// <summary>
+        /// Calculates the display title for an AttendanceOccurrence.
+        /// </summary>
+        /// <param name="occurrence">The AttendanceOccurrence</param>
+        private string GetOccurrenceTitle( AttendanceOccurrence occurrence )
+        {
+            //BUG - calculate the correct occurrence title (name, date, time).
+            return occurrence.EntityStringValue;
+        }
+
+        /// <summary>
         /// Shows the Accept/Decline options to allow RSVP for a single occurrence.
         /// </summary>
         /// <param name="occurrenceId">The ID of the AttendanceOccurrence.</param>
@@ -467,11 +500,11 @@ $('input.rsvp-list-input').on('click', function (e) {
                 else if ( occurrence.OccurrenceDate < DateTime.Now )
                 {
                     // This event has expired.
-                    Show404( true, occurrence.EntityStringValue );
+                    Show404( true, GetOccurrenceTitle( occurrence ) );
                     return;
                 }
 
-                lHeading.Text = occurrence.EntityStringValue;
+                lHeading.Text = GetOccurrenceTitle( occurrence );
                 pnlSingle_Choice.Visible = true;
 
                 var groupMember = occurrence.Group.Members.Where( gm => gm.PersonId == person.Id ).FirstOrDefault();
@@ -531,6 +564,35 @@ $('input.rsvp-list-input').on('click', function (e) {
         }
 
         /// <summary>
+        /// Tests the group to see if there are any GroupMember attributes.
+        /// </summary>
+        /// <returns></returns>
+        private bool GroupHasAttributes()
+        {
+            using (var rockContext = new RockContext())
+            {
+                var person = GetPerson();
+                var occurrenceId = PageParameter( PageParameterKey.AttendanceOccurrenceId ).AsInteger();
+                var occurrence = new AttendanceOccurrenceService( rockContext ).Get( occurrenceId );
+                var groupMember = occurrence.Group.Members.Where( gm => gm.PersonId == person.Id ).FirstOrDefault();
+                if ( groupMember == null )
+                {
+                    groupMember = new GroupMember();
+                    groupMember.PersonId = person.Id;
+                    groupMember.GroupId = occurrence.Group.Id;
+                    groupMember.GroupRoleId = occurrence.Group.GroupType.DefaultGroupRoleId ?? 0;
+
+                    new GroupMemberService( rockContext ).Add( groupMember );
+                    rockContext.SaveChanges();
+                }
+
+                groupMember.LoadAttributes();
+                var publicAttributes = new GroupMemberPublicAttriuteCollection( groupMember );
+                return publicAttributes.Attributes.Any();
+            }
+        }
+
+        /// <summary>
         /// Shows the RSVP Accept message for a single occurrence.
         /// </summary>
         /// <param name="occurrenceId">The ID of the AttendanceOccurrence.</param>
@@ -550,7 +612,7 @@ $('input.rsvp-list-input').on('click', function (e) {
                 else if ( occurrence.OccurrenceDate < DateTime.Now )
                 {
                     // This event has expired.
-                    Show404( true, occurrence.EntityStringValue );
+                    Show404( true, GetOccurrenceTitle( occurrence ) );
                     return;
                 }
 
@@ -652,7 +714,7 @@ $('input.rsvp-list-input').on('click', function (e) {
                 else if ( occurrence.OccurrenceDate < DateTime.Now )
                 {
                     // This event has expired.
-                    Show404( true, occurrence.EntityStringValue );
+                    Show404( true, GetOccurrenceTitle( occurrence ) );
                     return;
                 }
 
@@ -773,7 +835,7 @@ $('input.rsvp-list-input').on('click', function (e) {
                     repeaterItems.Add(
                         new OccurrenceDataItem()
                         {
-                            Title = occurrence.EntityStringValue,
+                            Title = GetOccurrenceTitle( occurrence ),
                             OccurrenceId = occurrenceId.ToString(),
                             PublicAttributes = publicAttributes
                         } );
@@ -863,7 +925,7 @@ $('input.rsvp-list-input').on('click', function (e) {
 
                 person = new PersonService( rockContext ).Get( person.Guid );
                 UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.Yes, phOccurrenceAttributes );
-                _processedOccurrences.Add( occurrence.EntityStringValue );
+                _processedOccurrences.Add( (GetOccurrenceTitle( occurrence ) );
             }
             return rcbAccept.Checked;
         }

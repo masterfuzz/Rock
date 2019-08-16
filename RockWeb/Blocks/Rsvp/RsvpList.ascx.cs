@@ -23,6 +23,7 @@ using Rock;
 using Rock.Attribute;
 using Rock.Data;
 using Rock.Model;
+using Rock.Web;
 using Rock.Web.UI;
 using Rock.Web.UI.Controls;
 using System.Data.Entity;
@@ -54,8 +55,8 @@ namespace RockWeb.Blocks.RSVP
         protected static class PageParameterKey
         {
             public const string GroupId = "GroupId";
-            public const string OccurrenceId = "OccurrenceId";
-            public const string OccurrenceDate = "OccurrenceDate";
+            public const string OccurrenceId = "OccurrenceId"; // Used for redirecting to detail block.
+            public const string OccurrenceDate = "OccurrenceDate"; // Used for redirecting to detail block.
         }
 
         protected static class UserPreferenceKey
