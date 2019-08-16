@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 
@@ -21,7 +22,7 @@ using Rock.Attribute;
 using Rock.Model;
 using Rock.Web.Cache;
 
-namespace Rock.PersonProfile.Badge
+namespace Rock.Badge.Component
 {
     /// <summary>
     /// Streak Engagement Badge
@@ -119,6 +120,16 @@ namespace Rock.PersonProfile.Badge
         }
 
         #endregion Keys
+
+        /// <summary>
+        /// Determines of this badge component applies to the given type
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        public override bool DoesApplyToEntityType( string type )
+        {
+            return type.IsNullOrWhiteSpace() || typeof( Person ).FullName == type;
+        }
 
         /// <summary>
         /// Renders the specified writer.

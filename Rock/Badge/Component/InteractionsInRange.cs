@@ -23,7 +23,7 @@ using Rock.Attribute;
 using Rock.Model;
 using Rock.Web.Cache;
 
-namespace Rock.PersonProfile.Badge
+namespace Rock.Badge.Component
 {
     /// <summary>
     /// Interactions in range Badge
@@ -39,6 +39,16 @@ namespace Rock.PersonProfile.Badge
     [TextField( "Badge Color", "The color of the badge (#ffffff).", true, "#0ab4dd", order: 4 )]
     public class InteractionsInRange : BadgeComponent
     {
+        /// <summary>
+        /// Determines of this badge component applies to the given type
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        public override bool DoesApplyToEntityType( string type )
+        {
+            return type.IsNullOrWhiteSpace() || typeof( Person ).FullName == type;
+        }
+
         /// <summary>
         /// Renders the specified writer.
         /// </summary>

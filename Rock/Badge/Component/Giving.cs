@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.Data;
@@ -25,7 +26,7 @@ using Rock.Model;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
-namespace Rock.PersonProfile.Badge
+namespace Rock.Badge.Component
 {
     /// <summary>
     /// Giving Badge
@@ -59,6 +60,16 @@ namespace Rock.PersonProfile.Badge
 " )]
     public class Giving : BadgeComponent
     {
+        /// <summary>
+        /// Determines of this badge component applies to the given type
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        public override bool DoesApplyToEntityType( string type )
+        {
+            return type.IsNullOrWhiteSpace() || typeof( Person ).FullName == type;
+        }
+
         /// <summary>
         /// Renders the specified writer.
         /// </summary>

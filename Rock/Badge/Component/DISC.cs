@@ -24,7 +24,7 @@ using Rock.Attribute;
 using Rock.Model;
 using Rock.Web.Cache;
 
-namespace Rock.PersonProfile.Badge
+namespace Rock.Badge.Component
 {
     /// <summary>
     /// DISC Badge as implemented from http://www.gregwiens.com/scid/ assessment template.
@@ -40,6 +40,16 @@ namespace Rock.PersonProfile.Badge
         /// The max value of a Natural DISC score.
         /// </summary>
         private int MAX = 100;
+
+        /// <summary>
+        /// Determines of this badge component applies to the given type
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        public override bool DoesApplyToEntityType( string type )
+        {
+            return type.IsNullOrWhiteSpace() || typeof( Person ).FullName == type;
+        }
 
         /// <summary>
         /// Renders the specified writer.

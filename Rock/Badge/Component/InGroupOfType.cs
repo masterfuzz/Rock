@@ -23,7 +23,7 @@ using Rock.Model;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
-namespace Rock.PersonProfile.Badge
+namespace Rock.Badge.Component
 {
     /// <summary>
     /// In Group Of Type Badge
@@ -36,6 +36,16 @@ namespace Rock.PersonProfile.Badge
     [ColorField("Badge Color", "The color of the badge (#ffffff).", true, defaultValue: "#0ab4dd")]
     public class InGroupOfType : BadgeComponent
     {
+        /// <summary>
+        /// Determines of this badge component applies to the given type
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        public override bool DoesApplyToEntityType( string type )
+        {
+            return type.IsNullOrWhiteSpace() || typeof( Person ).FullName == type;
+        }
+
         /// <summary>
         /// Renders the specified writer.
         /// </summary>

@@ -23,7 +23,7 @@ using Humanizer;
 using Rock.Model;
 using Rock.Web.Cache;
 
-namespace Rock.PersonProfile.Badge
+namespace Rock.Badge.Component
 {
     /// <summary>
     /// Attending Duration Badge
@@ -37,6 +37,16 @@ namespace Rock.PersonProfile.Badge
 
         private int _weeksPeriodInDays = 56;
         private int _monthsPeriodInDays = 720;
+
+        /// <summary>
+        /// Determines of this badge component applies to the given type
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns></returns>
+        public override bool DoesApplyToEntityType( string type )
+        {
+            return type.IsNullOrWhiteSpace() || typeof( Person ).FullName == type;
+        }
 
         /// <summary>
         /// Renders the specified writer.
