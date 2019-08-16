@@ -511,6 +511,9 @@ $('input.rsvp-list-input').on('click', function (e) {
             }
         }
 
+        /// <summary>
+        /// Rebuilds the dynamic attribute value controls (for single occurrence mode) after a postback.
+        /// </summary>
         private void BuildAttributeControls()
         {
             using (var rockContext = new RockContext())
