@@ -476,8 +476,23 @@ $('input.rsvp-list-input').on('click', function (e) {
         /// <param name="occurrence">The AttendanceOccurrence</param>
         private string GetOccurrenceTitle( AttendanceOccurrence occurrence )
         {
-            //BUG - calculate the correct occurrence title (name, date, time).
-            return occurrence.EntityStringValue;
+            bool hasSchedule = ( occurrence.Schedule != null );
+
+            if ( hasSchedule )
+            {
+                return string.Format(
+                    "{0} - {1}, {2}",
+                    occurrence.Group.Name,
+                    occurrence.OccurrenceDate.ToString( "dddd, MMMM d, yyyy" ),
+                    occurrence.Schedule.GetCalendarEvent().DTStart.Value.TimeOfDay.ToTimeString() );
+            }
+            else
+            {
+                return string.Format(
+                    "{0} - {1}",
+                    occurrence.Group.Name,
+                    occurrence.OccurrenceDate.ToString( "dddd, MMMM d, yyyy" ) );
+            }
         }
 
         /// <summary>
@@ -925,7 +940,7 @@ $('input.rsvp-list-input').on('click', function (e) {
 
                 person = new PersonService( rockContext ).Get( person.Guid );
                 UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.Yes, phOccurrenceAttributes );
-                _processedOccurrences.Add( (GetOccurrenceTitle( occurrence ) );
+                _processedOccurrences.Add( GetOccurrenceTitle( occurrence ) );
             }
             return rcbAccept.Checked;
         }
