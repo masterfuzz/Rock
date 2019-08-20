@@ -760,7 +760,7 @@
 							                </div>
 							                <div class="col-md-12">
 								                <div class="form-group">
-                                                    <button id="component-rsvp-registerbutton" type="button" class="btn btn-primary disabled">Register Recipients</button>
+                                                    <button id="component-rsvp-registerbutton" type="button" class="btn btn-xs btn-default disabled">Register Recipients</button>
                                                     <span class="js-rsvp-person-ids">
                                                         <asp:HiddenField ID="hfRSVPPersonIDs" runat="server" Value="" />
                                                     </span>
