@@ -101,6 +101,7 @@
                         </ItemTemplate>
                     </asp:Repeater>
                     
+                    <Rock:NotificationBox ID="nbNoOccurrencesSelected" runat="server" NotificationBoxType="Warning" Text="Please select at least one occurrence to accpt." Visible="false" />
                     <div class="actions">
                         <asp:LinkButton ID="lbAccept_Multiple" runat="server" AccessKey="a" ToolTip="Alt+A" Text="Accept" CssClass="btn btn-primary" OnClick="lbAccept_Multiple_Click"  />
                     </div>

@@ -149,71 +149,21 @@
                 }
             },
             handleOccurrenceAjaxResponse: function (ajaxResult, selectedValue) {
-                var selectValues = {};
-                var locationIds = '';
-
-                if (ajaxResult != '') {
-                    $.each(ajaxResult, function (k, v) {
-                        if (v.LocationId) {
-                            if (locationIds != '') { locationIds += ','; }
-                            locationIds += v.LocationId;
-                        }
-                        selectValues[k] = v.Id + '|' + v.GroupId + '|' + v.LocationId + '|' + v.ScheduleId + '|' + v.OccurrenceDate
-                    });
-                }
-
-                self = this;
-                if (locationIds != '') {
-                    // AJAX call to get location titles.
-                    var callback = function (response) {
-                        self.handleLocationTitleAjaxResponse(response, selectValues, selectedValue);
-                    };
-                    var restUrl = Rock.settings.get('baseUrl') + 'api/locations/GetLocationTitles?locationIds=' + locationIds;
-                    $.ajax({
-                        url: restUrl,
-                        async: false,
-                        success: callback
-                    });
-                } else {
-                    self.handleLocationTitleAjaxResponse('', selectValues, selectedValue);
-                }
-
-            },
-            handleLocationTitleAjaxResponse: function (ajaxResult, selectValues, selectedValue) {
-                var locationTitles = {};
-                if (ajaxResult != '') {
-                    $.each(ajaxResult, function (k, v) {
-                        console.log(v);
-                        locationTitles[k] = v;
-                    });
-                }
-
                 var selectElement = $('#component-rsvp-occurrence');
-
                 var occurrencesAdded = false;
-                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-                // Loop through each of the results and append the option to the dropdown
-                for (var key in selectValues) {
-                    var optionValue = selectValues[key];
-                    var locationId = optionValue.split('|')[2];
-                    var occurrenceDate = optionValue.split('|')[4];
-                    var objDate = new Date(JSON.parse('"' + occurrenceDate + '"'))
-                    var displayValue = monthNames[objDate.getMonth()] + ' ' + objDate.getDate() + ', ' + objDate.getFullYear() + ' (' + objDate.toLocaleTimeString() + ')';
-                    if (locationId && locationId != 'null' && locationId != '') {
-                        displayValue += ' - ' + locationTitles[locationId];
-                    }
-                    selectElement.append('<option value="' + optionValue + '">' + displayValue + '</option>');
-                    occurrencesAdded = true;
+                if (ajaxResult != '') {
+                    $.each(ajaxResult, function (k, v) {
+                        var optionValue = v.Occurrence.Id + '|' + v.Occurrence.GroupId + '|' + v.Occurrence.LocationId + '|' + v.Occurrence.ScheduleId + '|' + v.Occurrence.OccurrenceDate
+                        selectElement.append('<option value="' + optionValue + '">' + v.DisplayTitle + '</option>');
+                        occurrencesAdded = true;
+                    });
                 }
-
                 if (occurrencesAdded) {
                     selectElement.val(selectedValue);
                 } else {
                     selectElement.html('');
                     selectElement.append('<option value="">The selected group does not have any occurrences scheduled.</option>');
                 }
-
             },
             getOccurrenceValues: function (groupId, selectedValue) {
                 if (selectedValue == '') {
@@ -236,7 +186,30 @@
                     success: callback
                 });
             },
+            setButtonUrls: function(occurrenceId) {
+                var acceptButtonText = $('#component-rsvp-accepttext').val();
+                var acceptButtonColor = $('#component-rsvp-acceptbackgroundcolor').colorpicker('getValue');
+                var acceptButtonFontColor = $('#component-rsvp-acceptfontcolor').colorpicker('getValue');
+                var declineButtonText = $('#component-rsvp-declinetext').val();
+                var declineButtonColor = $('#component-rsvp-declinebackgroundcolor').colorpicker('getValue');
+                var declineButtonFontColor = $('#component-rsvp-declinefontcolor').colorpicker('getValue');
+                var baseUrl = '{{ \'Global\' | Attribute:\'PublicApplicationRoot\' }}RSVP?'
+                    + 'p={{ Person | PersonActionIdentifier:\'RSVP\' }}'
+                    + '&AcceptButtonText=' + encodeURIComponent(acceptButtonText)
+                    + '&AcceptButtonColor=' + encodeURIComponent(acceptButtonColor)
+                    + '&AcceptButtonFontColor=' + encodeURIComponent(acceptButtonFontColor)
+                    + '&DeclineButtonText=' + encodeURIComponent(declineButtonText)
+                    + '&DeclineButtonColor=' + encodeURIComponent(declineButtonColor)
+                    + '&DeclineButtonFontColor=' + encodeURIComponent(declineButtonFontColor)
+                    + '&AttendanceOccurrenceId=' + encodeURIComponent(occurrenceId);
+                var acceptUrl = baseUrl + '&isAccept=1';
+                var declineUrl = baseUrl + '&isAccept=0';
+
+                Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-accept-link').attr('href', acceptUrl);
+                Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-decline-link').attr('href', declineUrl);
+            },
             setOccurrence: function () {
+                var self = this;
                 var occurrenceValue = $('#component-rsvp-occurrence').val();
                 if (occurrenceValue == '') {
                     $('.js-rsvp-advanced-settings').hide();
@@ -269,16 +242,13 @@
                             success: function (result) {
                                 occurrenceId = result.Id;
                                 $('#component-rsvp-occurrence option:selected').val(occurrenceId + '|' + groupId + '|' + locationId + '|' + scheduleId + '|' + occurrenceDate);
-
                                 Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-occurrence-value').val(occurrenceId + '|' + groupId + '|' + locationId + '|' + scheduleId + '|' + occurrenceDate);
-                                Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-accept-link').attr('href', '{{ \'Global\' | Attribute:\'PublicApplicationRoot\' }}RSVP?isAccept=1&p={{ Person | PersonActionIdentifier:\'RSVP\' }}&AttendanceOccurrenceId=' + occurrenceId);
-                                Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-decline-link').attr('href', '{{ \'Global\' | Attribute:\'PublicApplicationRoot\' }}RSVP/?isAccept=0&p={{ Person | PersonActionIdentifier:\'RSVP\' }}&AttendanceOccurrenceId=' + occurrenceId);
+                                self.setButtonUrls(occurrenceId);
                             }
                         });
                     } else {
                         Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-occurrence-value').val(occurrenceId + '|' + groupId + '|' + locationId + '|' + scheduleId + '|' + occurrenceDate);
-                        Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-accept-link').attr('href', '{{ \'Global\' | Attribute:\'PublicApplicationRoot\' }}RSVP?isAccept=1&p={{ Person | PersonActionIdentifier:\'RSVP\' }}&AttendanceOccurrenceId=' + occurrenceId);
-                        Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-decline-link').attr('href', '{{ \'Global\' | Attribute:\'PublicApplicationRoot\' }}RSVP/?isAccept=0&p={{ Person | PersonActionIdentifier:\'RSVP\' }}&AttendanceOccurrenceId=' + occurrenceId);
+                        self.setButtonUrls(occurrenceId);
                     }
                 }
             },
@@ -301,20 +271,30 @@
                 });
 
             },
-
+            updateButtonUrls: function () {
+                var self = this;
+                var occurrenceValue = $('#component-rsvp-occurrence').val();
+                if (occurrenceValue != '') {
+                    var occurrenceId = occurrenceValue.split('|')[0];
+                    this.setButtonUrls(occurrenceId);
+                }
+            },
             setAcceptButtonText: function () {
                 var text = $('#component-rsvp-accepttext').val();
                 Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-accept-link')
                     .text(text)
                     .attr('title', text);
+                this.updateButtonUrls();
             },
             setAcceptButtonBackgroundColor: function () {
                 var color = $('#component-rsvp-acceptbackgroundcolor').colorpicker('getValue');
                 Rock.controls.emailEditor.$currentRsvpComponent.find('.accept-button-shell').css('backgroundColor', color);
+                this.updateButtonUrls();
             },
             setAcceptButtonFontColor: function () {
                 var color = $('#component-rsvp-acceptfontcolor').colorpicker('getValue');
                 Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-accept-link').css('color', color);
+                this.updateButtonUrls();
             },
             
             setDeclineButtonText: function () {
@@ -322,6 +302,7 @@
                 Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-decline-link')
                     .text(text)
                     .attr('title', text);
+                this.updateButtonUrls();
             },
             toggleDeclineButton: function (show) {
                 var declineButtonShell = Rock.controls.emailEditor.$currentRsvpComponent.find('.decline-button-shell');
@@ -336,10 +317,12 @@
             setDeclineButtonBackgroundColor: function () {
                 var color = $('#component-rsvp-declinebackgroundcolor').colorpicker('getValue');
                 Rock.controls.emailEditor.$currentRsvpComponent.find('.decline-button-shell').css('backgroundColor', color);
+                this.updateButtonUrls();
             },
             setDeclineButtonFontColor: function () {
                 var color = $('#component-rsvp-declinefontcolor').colorpicker('getValue');
                 Rock.controls.emailEditor.$currentRsvpComponent.find('.rsvp-decline-link').css('color', color);
+                this.updateButtonUrls();
             },
 
             setButtonFont: function () {

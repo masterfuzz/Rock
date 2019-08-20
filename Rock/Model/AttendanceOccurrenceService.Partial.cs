@@ -309,7 +309,7 @@ namespace Rock.Model
                 scheduleIdList = scheduleIds.Split( ',' ).Select( int.Parse ).ToList();
             }
 
-            var qry = Queryable().AsNoTracking().Where( a => a.GroupId == group.Id );
+            var qry = Queryable("Group,Schedule").AsNoTracking().Where( a => a.GroupId == group.Id );
 
             // Filter by date range
             var fromDate = DateTime.Now.Date;

@@ -77,12 +77,6 @@ namespace RockWeb.Blocks.RSVP
         DefaultValue = "",
         Order = 6 )]
 
-    [BooleanField( "Enable Multigroup Mode",
-        Key = AttributeKey.EnableMultigroupMode,
-        Description = "If Multigroup Mode is enabled, this block will allow users to RSVP for multiple groups at once.",
-        DefaultBooleanValue = true,
-        Order = 7 )]
-
     [TextField( "Multigroup Mode RSVP Title",
         Key = AttributeKey.MultigroupModeRSVPTitle,
         Description = "The page title when a user is RSVPing for multiple groups.",
@@ -94,12 +88,6 @@ namespace RockWeb.Blocks.RSVP
         Description = "The message displayed when one or more RSVPs are accepted in Multigroup mode.  Will include a list of accepted events with the key \"AcceptedRsvps\".",
         DefaultValue = "",
         Order = 9 )]
-
-    [MemoField( "Multigroup Decline Message",
-        Key = AttributeKey.MultigroupDeclineMessage,
-        Description = "This field is not used.",
-        DefaultValue = "",
-        Order = 10 )]
 
     #endregion
 
@@ -113,10 +101,8 @@ namespace RockWeb.Blocks.RSVP
             public const string DefaultAcceptMessage = "DefaultAcceptMessage";
             public const string DefaultDeclineMessage = "DefaultDeclineMessage";
             public const string DefaultDeclineReasons = "DefaultDeclineReasons";
-            public const string EnableMultigroupMode = "MultigroupModePageTitle";
             public const string MultigroupModeRSVPTitle = "MultigroupModeRSVPTitle";
             public const string MultigroupAcceptMessage = "MultigroupAcceptMessage";
-            public const string MultigroupDeclineMessage = "MultigroupDeclineMessage";
         }
 
         protected static class PageParameterKey
@@ -125,6 +111,12 @@ namespace RockWeb.Blocks.RSVP
             public const string AttendanceOccurrenceIds = "AttendanceOccurrenceIds";
             public const string PersonActionIdentifier = "p";
             public const string IsAccept = "IsAccept";
+            public const string AcceptButtonText = "AcceptButtonText";
+            public const string AcceptButtonColor = "AcceptButtonColor";
+            public const string AcceptButtonFontColor = "AcceptButtonFontColor";
+            public const string DeclineButtonText = "DeclineButtonText";
+            public const string DeclineButtonColor = "DeclineButtonColor";
+            public const string DeclineButtonFontColor = "DeclineButtonFontColor";
         }
 
         #region Properties
@@ -174,6 +166,8 @@ $('input.rsvp-list-input').on('click', function (e) {
             lbAccept_Multiple.Text = GetAttributeValue( AttributeKey.AcceptButtonLabel );
             lbAccept_Single.Text = GetAttributeValue( AttributeKey.AcceptButtonLabel );
             lbDecline_Single.Text = GetAttributeValue( AttributeKey.DeclineButtonLabel );
+
+            SetButtonProperties();
 
             var person = GetPerson();
             if ( person == null )
@@ -386,6 +380,7 @@ $('input.rsvp-list-input').on('click', function (e) {
             using ( var rockContext = new RockContext() )
             {
                 var occurrence = new AttendanceOccurrenceService( rockContext ).Get( occurrenceId );
+                person = new PersonService( rockContext ).Get( person.Guid );
                 UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.Yes );
             }
         }
@@ -477,6 +472,15 @@ $('input.rsvp-list-input').on('click', function (e) {
         private string GetOccurrenceTitle( AttendanceOccurrence occurrence )
         {
             bool hasSchedule = ( occurrence.Schedule != null );
+            DDay.iCal.Event calendarEvent = null;
+            if ( hasSchedule )
+            {
+                calendarEvent = occurrence.Schedule.GetCalendarEvent();
+                if ( calendarEvent == null )
+                {
+                    hasSchedule = false;
+                }
+            }
 
             if ( hasSchedule )
             {
@@ -736,7 +740,7 @@ $('input.rsvp-list-input').on('click', function (e) {
                 pnlForm.Visible = false;
                 pnlSingle_Choice.Visible = false;
 
-                person = new PersonService(rockContext).Get(person.Guid);
+                person = new PersonService( rockContext ).Get( person.Guid );
                 UpdateOrCreateAttendanceRecord( occurrence, person, rockContext, Rock.Model.RSVP.No );
                 hfDeclineReason_OccurrenceId.Value = occurrenceId.ToString();
 
@@ -906,10 +910,16 @@ $('input.rsvp-list-input').on('click', function (e) {
                     // Show Multiple Occurrence Accept message.
                     pnlMultiple_Accept.Visible = true;
                     pnlMultiple_Choice.Visible = false;
+                    pnlForm.Visible = false;
 
                     var mergeFields = Rock.Lava.LavaHelper.GetCommonMergeFields( RockPage, CurrentPerson );
                     mergeFields.Add( "AcceptedRsvps", _processedOccurrences );
                     nbAcceptMultiple.Text = GetAttributeValue( AttributeKey.MultigroupAcceptMessage ).ResolveMergeFields( mergeFields );
+                    nbNoOccurrencesSelected.Visible = false;
+                }
+                else
+                {
+                    nbNoOccurrencesSelected.Visible = true;
                 }
             }
         }
@@ -983,6 +993,75 @@ $('input.rsvp-list-input').on('click', function (e) {
             }
 
             return values;
+        }
+
+        /// <summary>
+        /// Sets the button style and text properties to match query string values passed in by the email editor.
+        /// </summary>
+        private void SetButtonProperties()
+        {
+            string acceptButtonText = PageParameter( PageParameterKey.AcceptButtonText );
+            string acceptButtonColor = PageParameter( PageParameterKey.AcceptButtonColor );
+            string acceptButtonFontColor = PageParameter( PageParameterKey.AcceptButtonFontColor );
+            string declineButtonText = PageParameter( PageParameterKey.DeclineButtonText );
+            string declineButtonColor = PageParameter( PageParameterKey.DeclineButtonColor );
+            string declineButtonFontColor = PageParameter( PageParameterKey.DeclineButtonFontColor );
+
+            if ( !string.IsNullOrWhiteSpace( acceptButtonText ) )
+            {
+                lbAccept_Multiple.Text = acceptButtonText;
+                lbAccept_Single.Text = acceptButtonText;
+            }
+
+            if ( !string.IsNullOrWhiteSpace( declineButtonText ) )
+            {
+                lbDecline_Single.Text = declineButtonText;
+            }
+
+            string acceptButtonStyle = string.Empty;
+            if ( !string.IsNullOrWhiteSpace( acceptButtonColor ) )
+            {
+                acceptButtonStyle = "background-color: " + acceptButtonColor + ";";
+            }
+            if ( !string.IsNullOrWhiteSpace( acceptButtonFontColor ) )
+            {
+                acceptButtonStyle = acceptButtonStyle + "color: " + acceptButtonFontColor + ";";
+            }
+            if ( !string.IsNullOrWhiteSpace( acceptButtonStyle ) )
+            {
+                lbAccept_Multiple.CssClass = "btn";
+                lbAccept_Multiple.Attributes.Remove( "style" );
+                lbAccept_Multiple.Attributes.Add( "style", acceptButtonStyle );
+                lbAccept_Single.CssClass = "btn";
+                lbAccept_Single.Attributes.Remove( "style" );
+                lbAccept_Single.Attributes.Add( "style", acceptButtonStyle );
+            }
+            else
+            {
+                lbAccept_Multiple.CssClass = "btn btn-primary";
+                lbAccept_Single.CssClass = "btn btn-primary";
+            }
+
+
+            string declineButtonStyle = string.Empty;
+            if ( !string.IsNullOrWhiteSpace( declineButtonColor ) )
+            {
+                declineButtonStyle = "background-color: " + declineButtonColor + ";";
+            }
+            if ( !string.IsNullOrWhiteSpace( declineButtonFontColor ) )
+            {
+                declineButtonStyle = declineButtonStyle + "color: " + declineButtonFontColor + ";";
+            }
+            if ( !string.IsNullOrWhiteSpace( declineButtonStyle ) )
+            {
+                lbDecline_Single.CssClass = "btn";
+                lbDecline_Single.Attributes.Remove( "style" );
+                lbDecline_Single.Attributes.Add( "style", declineButtonStyle );
+            }
+            else
+            {
+                lbDecline_Single.CssClass = "btn btn-default";
+            }
         }
 
         #endregion
