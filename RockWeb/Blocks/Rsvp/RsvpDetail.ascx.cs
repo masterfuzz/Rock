@@ -57,20 +57,20 @@ namespace RockWeb.Blocks.RSVP
     {
         #region Keys
 
-        protected static class AttributeKey
+        private static class AttributeKey
         {
             public const string DeclineReasonsType = "DeclineReasonsType";
             public const string MapStyle = "MapStyle";
         }
 
-        protected static class PageParameterKey
+        private static class PageParameterKey
         {
             public const string GroupId = "GroupId";
             public const string OccurrenceId = "OccurrenceId";
             public const string OccurrenceDate = "OccurrenceDate";
         }
 
-        protected static class PageLabels
+        private static class PageLabels
         {
             public const string MemberLocationTabTitle = "Member Location";
             public const string OtherLocationTabTitle = "Other Location";

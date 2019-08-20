@@ -93,7 +93,7 @@ namespace RockWeb.Blocks.RSVP
 
     public partial class RSVPResponse : RockBlock
     {
-        protected static class AttributeKey
+        private static class AttributeKey
         {
             public const string DisplayFormWhenSignedIn = "DisplayFormWhenSignedIn";
             public const string AcceptButtonLabel = "AcceptButtonLabel";
@@ -105,7 +105,7 @@ namespace RockWeb.Blocks.RSVP
             public const string MultigroupAcceptMessage = "MultigroupAcceptMessage";
         }
 
-        protected static class PageParameterKey
+        private static class PageParameterKey
         {
             public const string AttendanceOccurrenceId = "AttendanceOccurrenceId";
             public const string AttendanceOccurrenceIds = "AttendanceOccurrenceIds";

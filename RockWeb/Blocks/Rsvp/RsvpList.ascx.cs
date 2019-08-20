@@ -47,24 +47,25 @@ namespace RockWeb.Blocks.RSVP
     {
         #region Keys
 
-        protected static class AttributeKey
+        private static class AttributeKey
         {
             public const string RSVPDetailPage = "RSVPDetailPage";
         }
 
-        protected static class PageParameterKey
+        private static class PageParameterKey
         {
             public const string GroupId = "GroupId";
             public const string OccurrenceId = "OccurrenceId"; // Used for redirecting to detail block.
             public const string OccurrenceDate = "OccurrenceDate"; // Used for redirecting to detail block.
         }
 
-        protected static class UserPreferenceKey
+        private static class UserPreferenceKey
         {
             public const string DateRange = "DateRange";
             public const string Location = "Location";
             public const string Schedule = "Schedule";
         }
+
         #endregion
 
         #region Control Methods
