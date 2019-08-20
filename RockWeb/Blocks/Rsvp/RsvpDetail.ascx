@@ -7,7 +7,14 @@
 
     Sys.Application.add_load(function () {
         $('.js-follow-status').tooltip();
+
+        $('.js-show-additional-fields').off('click').on('click', function ()
+        {
+            $('.js-additional-fields').slideToggle();
+            return false;
+        });
     });
+
 </script>
 
 <asp:UpdatePanel ID="pnlContent" runat="server">
@@ -28,7 +35,7 @@
                 <asp:Panel ID="pnlDetails" runat="server">
 
                     <div class="row">
-                        <div class="col-sm-6">
+                        <div class="col-md-8 col-sm-6">
                             <div class="row">
                                 <div class="col-sm-12">
                                     <Rock:RockLiteral ID="lOccurrenceDate" runat="server" Label="Date" />
@@ -37,11 +44,11 @@
                                     <Rock:RockLiteral ID="lLocation" runat="server" Label="Location" />
                                 </div>
                                 <div class="col-sm-12">
-                                    <Rock:RockLiteral ID="lSchedule" runat="server" Label="Schedule" />
+                                    <Rock:RockLiteral ID="lSchedule" runat="server" Label="Check-in Schedule" />
                                 </div>
                             </div>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-md-4 col-sm-6">
                             <canvas id="doughnutChartCanvas" runat="server"></canvas>
                         </div>
                     </div>
@@ -52,14 +59,16 @@
                 </asp:Panel>
 
                 <asp:Panel ID="pnlEdit" runat="server">
+                    <fieldset id="fieldsetViewSummary" runat="server">
+
                     <Rock:NotificationBox ID="nbEditConflict" runat="server" NotificationBoxType="Danger" Text="Unable to edit occurrence because another occurrence already exists on the same date, with the same location and schedule" Visible="false" />
                     <div class="row">
                         <div class="col-sm-6">
                             <Rock:DatePicker ID="dpOccurrenceDate" runat="server" Label="Date" Required="true" />
                         </div>
                         <div class="col-sm-6">
-                            <Rock:RockControlWrapper ID="rcwSchedule" runat="server" Label="Schedule" >
-                                <Rock:ScheduleBuilder ID="sbSchedule" runat="server" AllowMultiSelect="true" OnSaveSchedule="sbSchedule_SaveSchedule" />
+                            <Rock:RockControlWrapper ID="rcwSchedule" runat="server" Label="Check-in Schedule" >
+                                <Rock:SchedulePicker ID="spSchedule" runat="server" AllowMultiSelect="false" />
                                 <asp:Literal ID="lScheduleText" runat="server" />
                             </Rock:RockControlWrapper>
                         </div>
@@ -70,7 +79,11 @@
                         </div>
                     </div>
 
-                    <Rock:PanelWidget ID="wpAdvanced" runat="server" Title="Advanced Settings">
+                    <div class="text-right margin-md-right row">
+                        <a href="#" class="btn btn-xs btn-link js-show-additional-fields" >Show Advanced Settings</a>
+                    </div>
+
+                    <asp:Panel ID="wpAdvanced" runat="server" Title="Advanced Settings" CssClass="js-additional-fields" style="display:none">
                         <div class="row">
                             <div class="col-sm-12">
                                 <Rock:HtmlEditor ID="heAcceptMessage" runat="server" Toolbar="Light" Label="Custom Accept Message" />
@@ -89,13 +102,14 @@
                                 <Rock:RockCheckBox ID="rcbShowDeclineReasons" runat="server" Label="Show Decline Reasons" />
                             </div>
                         </div>
-                    </Rock:PanelWidget>
+                    </asp:Panel>
 
                     <div class="actions">
                         <asp:LinkButton ID="lbSaveOccurrence" runat="server" AccessKey="s" ToolTip="Alt+s" Text="Save" CssClass="btn btn-primary" OnClick="lbSaveOccurrence_Click" />
                         <asp:LinkButton ID="lbCancelOccurrence" runat="server" AccessKey="c" ToolTip="Alt+c" Text="Cancel" CssClass="btn btn-link" OnClick="lbCancelOccurrence_Click" CausesValidation="false" />
                     </div>
 
+                </fieldset>
                 </asp:Panel>
 
             </div>
@@ -114,6 +128,7 @@
                 });
             </script>
             <div class="panel-body">
+                <fieldset id="fieldsetAttendees" runat="server">
 
                     <Rock:Grid ID="gAttendees" runat="server" DisplayType="Light" ExportSource="ColumnOutput" OnRowDataBound="gAttendees_RowDataBound" DataKeyNames="PersonId">
                         <Columns>
@@ -147,7 +162,7 @@
                         <asp:LinkButton ID="lbSave" runat="server" AccessKey="s" ToolTip="Alt+s" Text="Save" CssClass="btn btn-primary" OnClick="lbSave_Click" CausesValidation="false" />
                         <asp:LinkButton ID="lbCancel" runat="server" AccessKey="c" ToolTip="Alt+c" Text="Cancel" CssClass="btn btn-link" OnClick="lbCancel_Click" CausesValidation="false" />
                     </div>
-
+                </fieldset>
             </div>
         </asp:Panel>
 

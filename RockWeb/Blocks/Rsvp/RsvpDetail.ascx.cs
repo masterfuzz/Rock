@@ -182,18 +182,6 @@ namespace RockWeb.Blocks.RSVP
         #region Events
 
         /// <summary>
-        /// Handles the SaveSchedule event of the sbSchedule control.
-        /// </summary>
-        /// <param name="sender">The source of the event.</param>
-        /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
-        protected void sbSchedule_SaveSchedule( object sender, EventArgs e )
-        {
-            var schedule = new Schedule { iCalendarContent = sbSchedule.iCalendarContent };
-            lSchedule.Text = schedule.FriendlyScheduleText;
-            lScheduleText.Text = schedule.FriendlyScheduleText;
-        }
-
-        /// <summary>
         /// Handles the Click event of the lbSave control.
         /// </summary>
         /// <param name="sender">The source of the event.</param>
@@ -480,26 +468,35 @@ namespace RockWeb.Blocks.RSVP
                 {
                     location = new LocationService( rockContext ).Get( occurrence.LocationId.Value );
                 }
+                lLocation.Visible = true;
                 lLocation.Text = location.ToString();
                 locpLocation.Location = location;
             }
             else
             {
+                lLocation.Visible = false;
                 lLocation.Text = string.Empty;
                 locpLocation.Location = null;
             }
 
+            if ( occurrence.ScheduleId.HasValue && occurrence.Schedule == null )
+            {
+                occurrence.Schedule = new ScheduleService( rockContext ).GetNoTracking( occurrence.ScheduleId.Value );
+            }
+
             if ( occurrence.Schedule == null )
             {
+                lSchedule.Visible = false;
                 lSchedule.Text = string.Empty;
                 lScheduleText.Text = string.Empty;
-                sbSchedule.iCalendarContent = string.Empty;
+                spSchedule.SetValue( null );
             }
             else
             {
+                lSchedule.Visible = true;
                 lSchedule.Text = occurrence.Schedule.FriendlyScheduleText;
                 lScheduleText.Text = occurrence.Schedule.FriendlyScheduleText;
-                sbSchedule.iCalendarContent = occurrence.Schedule.iCalendarContent;
+                spSchedule.SetValue( occurrence.Schedule );
             }
 
             BindAttendeeGridAndChart();
@@ -778,22 +775,8 @@ var dnutChart = new Chart(dnutCtx, {{
                     occurrence.LocationId = null;
                 }
 
-                string iCalendarContent = sbSchedule.iCalendarContent ?? string.Empty;
-                var calEvent = ScheduleICalHelper.GetCalendarEvent( iCalendarContent );
-                if ( calEvent != null && calEvent.DTStart != null )
-                {
-                    if ( occurrence.Schedule == null )
-                    {
-                        occurrence.Schedule = new Schedule();
-                    }
-                    occurrence.Schedule.iCalendarContent = iCalendarContent;
-                    occurrence.ScheduleId = occurrence.Schedule.Id;
-                }
-                else
-                {
-                    occurrence.Schedule = null;
-                    occurrence.ScheduleId = null;
-                }
+                // The schedule is OK to be null
+                occurrence.ScheduleId = spSchedule.SelectedValueAsId();
 
                 if (dpOccurrenceDate.SelectedDate.HasValue)
                 {
@@ -802,7 +785,7 @@ var dnutChart = new Chart(dnutCtx, {{
 
                 var occurrenceService = new AttendanceOccurrenceService(rockContext);
 
-                //If this occurrence has already been created, just use the existing one.
+                // If this occurrence has already been created, just use the existing one.
                 var existingOccurrences = occurrenceService.Queryable()
                     .Where( o => o.GroupId == occurrence.GroupId)
                     .Where( o => o.OccurrenceDate == occurrence.OccurrenceDate)
@@ -867,22 +850,8 @@ var dnutChart = new Chart(dnutCtx, {{
                     occurrence.LocationId = null;
                 }
 
-                string iCalendarContent = sbSchedule.iCalendarContent ?? string.Empty;
-                var calEvent = ScheduleICalHelper.GetCalendarEvent( iCalendarContent );
-                if ( calEvent != null && calEvent.DTStart != null )
-                {
-                    if ( occurrence.Schedule == null )
-                    {
-                        occurrence.Schedule = new Schedule();
-                    }
-                    occurrence.Schedule.iCalendarContent = iCalendarContent;
-                    occurrence.ScheduleId = occurrence.Schedule.Id;
-                }
-                else
-                {
-                    occurrence.Schedule = null;
-                    occurrence.ScheduleId = null;
-                }
+                // The schedule is OK to be null
+                occurrence.ScheduleId = spSchedule.SelectedValueAsId();
 
                 if ( dpOccurrenceDate.SelectedDate.HasValue )
                 {
