@@ -70,7 +70,7 @@ namespace RockWeb.Blocks.Communication
         /// <summary>
         /// Keys to use for Block Attributes
         /// </summary>
-        protected static class AttributeKey
+        private static class AttributeKey
         {
             public const string SeriesColors = "SeriesColors";
             public const string EnablePersonalTemplates = "EnablePersonalTemplates";
@@ -89,7 +89,7 @@ namespace RockWeb.Blocks.Communication
         /// <summary>
         /// Keys to use for Page Parameters
         /// </summary>
-        protected static class PageParameterKey
+        private static class PageParameterKey
         {
             public const string CommunicationId = "CommunicationId";
             public const string Edit = "Edit";
@@ -102,7 +102,7 @@ namespace RockWeb.Blocks.Communication
         /// <summary>
         /// Keys to use for User Preferences
         /// </summary>
-        protected static class UserPreferenceKey
+        private static class UserPreferenceKey
         {
             public const string RecipientListSettings = "RecipientListSettings";
         }
@@ -856,8 +856,6 @@ namespace RockWeb.Blocks.Communication
         /// <param name="e">The <see cref="EventArgs"/> instance containing the event data.</param>
         private void gRecipients_RowDataBound( object sender, GridViewRowEventArgs e )
         {
-            Person p;
-
             if ( e.Row.RowType != DataControlRowType.DataRow )
             {
                 return;
@@ -888,7 +886,7 @@ namespace RockWeb.Blocks.Communication
         /// <summary>
         /// Keys to use for Filter Settings
         /// </summary>
-        protected static class FilterSettingName
+        private static class FilterSettingName
         {
             public const string FirstName = "First Name";
             public const string LastName = "Last Name";
@@ -1709,6 +1707,7 @@ namespace RockWeb.Blocks.Communication
                     {
                         sb.AppendLine( "<div class='row'>" );
                         sb.AppendLine( "<div class='col-md-6'>" );
+                        sb.AppendLine( "<dl>" );
 
                         AppendMediumData( sb, "From Name", communication.FromName );
                         AppendMediumData( sb, "From Address", communication.FromEmail );
@@ -1731,13 +1730,16 @@ namespace RockWeb.Blocks.Communication
                             }
                             sb.Append( "</ul>" );
                         }
+
+                        sb.AppendLine( "</dl>" );
+
                         sb.AppendLine( "</div>" );
 
                         sb.AppendLine( "</div>" );
 
                         if ( communication.Message.IsNotNullOrWhiteSpace() )
                         {
-                            AppendMediumData( sb, "HtmlMessage", string.Format( @"
+                            AppendMediumData( sb, "HTML Message", string.Format( @"
                         <iframe id='js-email-body-iframe' class='email-body'></iframe>
                         <script id='email-body' type='text/template'>{0}</script>
                         <script type='text/javascript'>
@@ -1783,7 +1785,7 @@ namespace RockWeb.Blocks.Communication
         {
             if ( key.IsNotNullOrWhiteSpace() && value.IsNotNullOrWhiteSpace() )
             {
-                sb.AppendFormat( "<div class='form-group'><label class='control-label'>{0}</label><p class='form-control-static'>{1}</p></div>", key, value );
+                sb.AppendFormat( "<dt>{0}</dt><dd>{1}</dd>", key, value );
             }
         }
 
@@ -1934,12 +1936,12 @@ namespace RockWeb.Blocks.Communication
                 cancelledRecipientCount = recipientQuery.Count( a => a.Status == CommunicationRecipientStatus.Cancelled );
             }
 
-            string actionsStatFormatNumber = "<div class='js-actions-statistic' title='{0}'>{1:#,##0}</div>";
+            string actionsStatFormatNumber = "<div>{0:#,##0}</div>";
 
-            lPending.Text = string.Format( actionsStatFormatNumber, "The number of recipients that have not yet received the communication", pendingRecipientCount );
-            lDelivered.Text = string.Format( actionsStatFormatNumber, "The number of recipients that the communication was successfully delivered to", deliveredRecipientCount );
-            lFailed.Text = string.Format( actionsStatFormatNumber, "The number of recipients to whom the communication could not be sent", failedRecipientCount );
-            lCancelled.Text = string.Format( actionsStatFormatNumber, "The number of recipients for whom the communication was cancelled", cancelledRecipientCount );
+            lPending.Text = string.Format( actionsStatFormatNumber, pendingRecipientCount );
+            lDelivered.Text = string.Format( actionsStatFormatNumber, deliveredRecipientCount );
+            lFailed.Text = string.Format( actionsStatFormatNumber, failedRecipientCount );
+            lCancelled.Text = string.Format( actionsStatFormatNumber, cancelledRecipientCount );
 
             if ( !showAnalytics )
             {
@@ -2332,7 +2334,7 @@ namespace RockWeb.Blocks.Communication
         }
 
         /// <summary>
-        /// Add a Person Property to the column selection for the Recipients List. 
+        /// Add a Person Property to the column selection for the Recipients List.
         /// </summary>
         /// <param name="columns"></param>
         /// <param name="propertyName"></param>
@@ -2351,7 +2353,7 @@ namespace RockWeb.Blocks.Communication
         }
 
         /// <summary>
-        /// Add a calculated column to the column selection for the Recipients List. 
+        /// Add a calculated column to the column selection for the Recipients List.
         /// </summary>
         /// <param name="columns"></param>
         /// <param name="name"></param>
@@ -2376,7 +2378,7 @@ namespace RockWeb.Blocks.Communication
         }
 
         /// <summary>
-        /// Add a Person Attribute to the column selection for the Recipients List. 
+        /// Add a Person Attribute to the column selection for the Recipients List.
         /// </summary>
         /// <param name="columns"></param>
         /// <param name="attributeGuid"></param>
@@ -2435,7 +2437,7 @@ namespace RockWeb.Blocks.Communication
         /// <summary>
         /// Get the query that uniquely identifies the subset records that match the current filter.
         /// At a minimum, this query must return a unique identifier for each record that can be used to retrieve additional details about the item.
-        /// Additional information may also be retrieved and cached here if it is 
+        /// Additional information may also be retrieved and cached here if it is
         /// </summary>
         /// <param name="skipCount"></param>
         /// <param name="takeCount"></param>
@@ -2771,7 +2773,7 @@ namespace RockWeb.Blocks.Communication
         #region Block specific classes
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public class SummaryInfo
         {
@@ -2801,7 +2803,7 @@ namespace RockWeb.Blocks.Communication
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public class TopLinksInfo
         {
@@ -2839,7 +2841,7 @@ namespace RockWeb.Blocks.Communication
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public class ClientTypeUsageInfo
         {
@@ -2861,7 +2863,7 @@ namespace RockWeb.Blocks.Communication
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public class ApplicationUsageInfo
         {
@@ -2945,11 +2947,11 @@ namespace RockWeb.Blocks.Communication
         /// </summary>
         private class InteractionInfo
         {
-            public DateTime InteractionDateTime;
-            public string Operation;
-            public string InteractionData;
-            public int? CommunicationRecipientId;
-            public int? PersonId;
+            public DateTime InteractionDateTime { get; set; }
+            public string Operation { get; set; }
+            public string InteractionData { get; set; }
+            public int? CommunicationRecipientId { get; set; }
+            public int? PersonId { get; set; }
         }
 
         /// <summary>

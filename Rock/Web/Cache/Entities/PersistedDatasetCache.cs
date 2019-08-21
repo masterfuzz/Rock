@@ -67,6 +67,15 @@ namespace Rock.Web.Cache
         public int? RefreshIntervalMinutes { get; set; }
 
         /// <summary>
+        /// Gets or sets a comma-delimited list of enabled LavaCommands
+        /// </summary>
+        /// <value>
+        /// The enabled lava commands.
+        /// </value>
+        [DataMember]
+        public string EnabledLavaCommands { get; set; }
+
+        /// <summary>
         /// Gets or sets the persisted last refresh date time.
         /// </summary>
         /// <value>
@@ -94,12 +103,12 @@ namespace Rock.Web.Cache
         public string ResultData { get; set; }
 
         /// <summary>
-        /// Gets the result data object.
+        /// returns an <see cref="System.Dynamic.ExpandoObject"/> or a list of <see cref="System.Dynamic.ExpandoObject"/>.  If <see cref="ResultData"/> can't be deserialized, returns null
         /// </summary>
         /// <value>
         /// The result data object.
         /// </value>
-        public object ResultDataObject
+        public dynamic ResultDataObject
         {
             get
             {
@@ -111,7 +120,7 @@ namespace Rock.Web.Cache
                     switch ( this.ResultFormat )
                     {
                         case PersistedDatasetDataFormat.JSON:
-                            itemFactoryResultObject = this.ResultData.FromJsonOrNull<object>();
+                            itemFactoryResultObject = this.ResultData.FromJsonDynamicOrNull();
                             break;
 
                         default:
@@ -123,7 +132,7 @@ namespace Rock.Web.Cache
 
                 if ( this.MemoryCacheDurationMS.HasValue )
                 {
-                    var persistedDatasetValueCache = ItemCache<PersistedDatasetValueCache>.GetOrAddExisting(
+                    PersistedDatasetValueCache persistedDatasetValueCache = ItemCache<PersistedDatasetValueCache>.GetOrAddExisting(
                         this.Id,
                         itemFactory,
                         TimeSpan.FromMilliseconds( MemoryCacheDurationMS.Value ) );
@@ -132,7 +141,9 @@ namespace Rock.Web.Cache
                 }
                 else
                 {
-                    resultDataObject = itemFactory;
+                    PersistedDatasetValueCache persistedDatasetValueCache = itemFactory();
+
+                    resultDataObject = persistedDatasetValueCache?.ResultDataObjectValue;
                 }
 
                 return resultDataObject;
@@ -146,9 +157,9 @@ namespace Rock.Web.Cache
         public class DataFormatException : FormatException
         {
             /// <summary>
-            /// Initializes a new instance of the <see cref="DataFormatException"/> class.
+            /// Initializes a new instance of the <see cref="DataFormatException" /> class.
             /// </summary>
-            /// <param name="message">The message that describes the error.</param>
+            /// <param name="dataFormat">The data format.</param>
             public DataFormatException( PersistedDatasetDataFormat dataFormat )
                 : base( $"Unexpected ResultFormat: {dataFormat.ConvertToString()}" )
             {
@@ -219,7 +230,7 @@ namespace Rock.Web.Cache
         public double? TimeToBuildMS { get; set; }
 
         /// <summary>
-        /// Gets or sets the Id of the <see cref="Rock.Web.Cache.EntityTypeCache"> (<see cref="Rock.Model.EntityType"/>) that this PesistedDataset is used for.
+        /// Gets or sets the Id of the <see cref="Rock.Web.Cache.EntityTypeCache"/> (<see cref="Rock.Model.EntityType"/>) that this PesistedDataset is used for.
         /// </summary>
         /// <value>
         /// A <see cref="System.Int32"/> representing the Id of the <see cref="Rock.Model.EntityType"/>
@@ -246,7 +257,7 @@ namespace Rock.Web.Cache
         /// </summary>
         /// <param name="accessKey">The access key.</param>
         /// <returns></returns>
-        public static object GetObjectFromAccessKey( string accessKey )
+        public static dynamic GetObjectFromAccessKey( string accessKey )
         {
             return GetFromAccessKey( accessKey )?.ResultDataObject;
         }
@@ -302,6 +313,7 @@ namespace Rock.Web.Cache
             Description = persistedDataset.Description;
             RefreshIntervalMinutes = persistedDataset.RefreshIntervalMinutes;
             LastRefreshDateTime = persistedDataset.LastRefreshDateTime;
+            EnabledLavaCommands = persistedDataset.EnabledLavaCommands;
             AllowManualRefresh = persistedDataset.AllowManualRefresh;
             ResultData = persistedDataset.ResultData;
             ResultFormat = persistedDataset.ResultFormat;
@@ -313,6 +325,9 @@ namespace Rock.Web.Cache
             TimeToBuildMS = persistedDataset.TimeToBuildMS;
             EntityTypeId = persistedDataset.EntityTypeId;
             ExpireDateTime = persistedDataset.ExpireDateTime;
+
+            // the ResultDataObject is cached in PersistedDatasetValueCache (with a cache expiration), so need to flush that when re-loading
+            PersistedDatasetValueCache.FlushItem( this.Id );
 
             AccessKeyIdLookup.AddOrUpdate( persistedDataset.AccessKey, persistedDataset.Id, ( k, v ) => persistedDataset.Id );
         }

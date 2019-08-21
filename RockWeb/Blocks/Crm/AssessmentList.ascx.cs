@@ -76,8 +76,8 @@ namespace Rockweb.Blocks.Crm
 
     public partial class AssessmentList : Rock.Web.UI.RockBlock
     {
-        #region Attribute Keys
-        protected static class AttributeKey
+        #region Atrribute Keys
+        private static class AttributeKey
         {
 
             /// <summary>

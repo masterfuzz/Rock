@@ -16,9 +16,11 @@
 //
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 
 namespace Rock
@@ -78,11 +80,61 @@ namespace Rock
                     return JsonConvert.DeserializeObject<T>( val );
                 }
             }
-            catch (Exception ex)
+            catch ( Exception ex )
             {
-                System.Diagnostics.Debug.WriteLine( $"Unable to deserialize to {typeof(T).Name}. {ex}" );
+                System.Diagnostics.Debug.WriteLine( $"Unable to deserialize to {typeof( T ).Name}. {ex}" );
                 return default( T );
             }
+        }
+
+        /// <summary>
+        /// Attempts to deserialize a JSON string into either a <see cref="ExpandoObject" /> or a list of <see cref="ExpandoObject" />.  If it can't be deserialized, return null
+        /// </summary>
+        /// <param name="val">The value.</param>
+        /// <returns></returns>
+        public static object FromJsonDynamicOrNull( this string val )
+        {
+            try
+            {
+                return val.FromJsonDynamic();
+            }
+            catch ( Exception ex )
+            {
+                System.Diagnostics.Debug.WriteLine( $"Unable to deserialize to dynamic. {ex}" );
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to deserialize a JSON string into either a <see cref="ExpandoObject" /> or a list of <see cref="ExpandoObject" />. If it can't be deserialized, throws an exception
+        /// </summary>
+        /// <param name="val">The value.</param>
+        /// <returns></returns>
+        public static object FromJsonDynamic( this string val )
+        {
+            var converter = new ExpandoObjectConverter();
+            object dynamicObject = null;
+
+            try
+            {
+                // first try to deserialize as straight ExpandoObject
+                dynamicObject = JsonConvert.DeserializeObject<ExpandoObject>( val, converter );
+            }
+            catch
+            {
+                try
+                {
+                    // if it didn't deserialize as straight ExpandoObject, try it as a List of ExpandoObjects
+                    dynamicObject = JsonConvert.DeserializeObject<List<ExpandoObject>>( val, converter );
+                }
+                catch
+                {
+                    // if it didn't deserialize as a List of ExpandoObject, try it as a List of plain objects
+                    dynamicObject = JsonConvert.DeserializeObject<List<object>>( val, converter );
+                }
+            }
+
+            return dynamicObject;
         }
 
         #endregion
@@ -108,7 +160,7 @@ namespace Rock
                 .Select( r => r.Key )
                 .ToList();
 
-            arrayKeys.ForEach( k => result[k] = ( (JArray)result[k] ).ToObjectArray() );
+            arrayKeys.ForEach( k => result[k] = ( ( JArray ) result[k] ).ToObjectArray() );
             valueKeys.ForEach( k => result[k] = ToDictionary( result[k] as JObject ) );
 
             return result;
@@ -123,17 +175,17 @@ namespace Rock
         {
             var valueList = new List<object>();
 
-            for( var i = 0; i < jarray.Count; i++ )
+            for ( var i = 0; i < jarray.Count; i++ )
             {
                 var obj = jarray[i];
                 if ( obj.GetType() == typeof( JObject ) )
                 {
-                    valueList.Add( ( (JObject)obj ).ToDictionary() );
+                    valueList.Add( ( ( JObject ) obj ).ToDictionary() );
                 }
 
-                if ( obj.GetType() == typeof( JValue ))
+                if ( obj.GetType() == typeof( JValue ) )
                 {
-                    valueList.Add( ( (JValue)obj ).Value );
+                    valueList.Add( ( ( JValue ) obj ).Value );
                 }
             }
 

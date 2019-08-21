@@ -22,6 +22,7 @@ using System.Data.Entity.ModelConfiguration;
 using System.Runtime.Serialization;
 
 using Rock.Data;
+using Rock.Lava;
 using Rock.Web.Cache;
 
 namespace Rock.Model
@@ -44,9 +45,9 @@ namespace Rock.Model
         /// The access key.
         /// </value>
         [MaxLength( 100 )]
-        [DataMember]
+        [DataMember( IsRequired = true )]
         [HideFromReporting]
-        [Index( IsUnique = true )] 
+        [Index( IsUnique = true )]
         public string AccessKey { get; set; }
 
         /// <summary>
@@ -86,6 +87,15 @@ namespace Rock.Model
         /// </value>
         [DataMember]
         public DateTime? LastRefreshDateTime { get; set; }
+
+        /// <summary>
+        /// Gets or sets a comma-delimited list of enabled LavaCommands
+        /// </summary>
+        /// <value>
+        /// The enabled lava commands.
+        /// </value>
+        [DataMember]
+        public string EnabledLavaCommands { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether [allow manual refresh].
@@ -171,7 +181,7 @@ namespace Rock.Model
         public double? TimeToBuildMS { get; set; }
 
         /// <summary>
-        /// Gets or sets the Id of the <see cref="Rock.Web.Cache.EntityTypeCache"> (<see cref="Rock.Model.EntityType"/>) that this PesistedDataset is used for.
+        /// Gets or sets the Id of the <see cref="Rock.Web.Cache.EntityTypeCache"/> (<see cref="Rock.Model.EntityType"/>) that this PesistedDataset is used for.
         /// </summary>
         /// <value>
         /// A <see cref="System.Int32"/> representing the Id of the <see cref="Rock.Model.EntityType"/>
@@ -226,6 +236,73 @@ namespace Rock.Model
         }
 
         #endregion ICacheable
+
+        #region methods
+
+        /// <summary>
+        /// Runs the <see cref="BuildScript" /> and sets <see cref="ResultData"/>
+        /// </summary>
+        public void UpdateResultData()
+        {
+            var timeToBuildStopwatch = System.Diagnostics.Stopwatch.StartNew();
+            switch ( this.BuildScriptType )
+            {
+                case PersistedDatasetScriptType.Lava:
+                    {
+                        var mergeFields = LavaHelper.GetCommonMergeFields( null, null, CommonMergeFieldsOptions.CommonMergeFieldsOptionsEmpty );
+
+                        if ( this.EnabledLavaCommands.IsNotNullOrWhiteSpace() )
+                        {
+                            this.ResultData = this.BuildScript.ResolveMergeFields( mergeFields, null, this.EnabledLavaCommands );
+                        }
+                        else
+                        {
+                            this.ResultData = this.BuildScript.ResolveMergeFields( mergeFields );
+                        }
+                        break;
+                    }
+
+                default:
+                    {
+                        throw new UnsupportedBuildScriptTypeException( this.BuildScriptType );
+                    }
+            }
+
+            timeToBuildStopwatch.Stop();
+            this.TimeToBuildMS = timeToBuildStopwatch.Elapsed.TotalMilliseconds;
+
+            this.LastRefreshDateTime = RockDateTime.Now;
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <seealso cref="System.Exception" />
+        [Serializable]
+        private class UnsupportedBuildScriptTypeException : Exception
+        {
+            private readonly PersistedDatasetScriptType buildScriptType;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="UnsupportedBuildScriptTypeException"/> class.
+            /// </summary>
+            public UnsupportedBuildScriptTypeException()
+            {
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="UnsupportedBuildScriptTypeException"/> class.
+            /// </summary>
+            /// <param name="buildScriptType">Type of the build script.</param>
+            public UnsupportedBuildScriptTypeException( PersistedDatasetScriptType buildScriptType )
+                : base( $"Unsupported PersistedDatasetScriptType: {buildScriptType.ConvertToString()}" )
+            {
+                this.buildScriptType = buildScriptType;
+            }
+        }
+
+        #endregion
     }
 
     #region Enums
@@ -235,9 +312,12 @@ namespace Rock.Model
     /// </summary>
     public enum PersistedDatasetScriptType
     {
+        /// <summary>
+        /// The lava
+        /// </summary>
         Lava,
-        Sql,
-        Report
+        //Sql,
+        //Report
     }
 
     /// <summary>
@@ -245,6 +325,9 @@ namespace Rock.Model
     /// </summary>
     public enum PersistedDatasetDataFormat
     {
+        /// <summary>
+        /// The json
+        /// </summary>
         JSON
     }
 
