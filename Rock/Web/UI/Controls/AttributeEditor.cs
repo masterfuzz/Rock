@@ -1930,6 +1930,7 @@ namespace Rock.Web.UI.Controls
         {
             if ( attribute != null )
             {
+                attribute.IsSystem = this.IsSystem;
                 attribute.Id = this.AttributeId ?? 0;
                 attribute.Guid = this.AttributeGuid;
                 attribute.Name = this.Name;
