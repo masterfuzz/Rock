@@ -37,11 +37,12 @@ namespace RockWeb.Blocks.RSVP
     [Category( "RSVP" )]
     [Description( "Lists RSVP Occurrences." )]
 
-    //ToDo:  If this page is created in a migration, the default value should be set here.
     [LinkedPage(
         "RSVP Detail Page",
         Description = "The Page to displays RSVP Details",
-        Key = AttributeKey.RSVPDetailPage )]
+        Key = AttributeKey.RSVPDetailPage,
+        DefaultValue = Rock.SystemGuid.Page.GROUP_RSVP_DETAIL,
+        Order = 0 )]
 
     public partial class RSVPList : RockBlock, ISecondaryBlock, ICustomGridColumns
     {

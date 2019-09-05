@@ -37,7 +37,7 @@ namespace RockWeb.Blocks.RSVP
     /// </summary>
     [DisplayName( "RSVP Response" )]
     [Category( "RSVP" )]
-    [Description( "Allowes invited people to RSVP for one or more Attendane Occurrences." )]
+    [Description( "Allows invited people to RSVP for one or more Attendance Occurrences." )]
 
     #region Block Attributes
 

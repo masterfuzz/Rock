@@ -39,19 +39,11 @@ namespace RockWeb.Blocks.RSVP
     [Category( "RSVP" )]
     [Description( "Shows detailed RSVP information for a specific occurrence and allows editing RSVP details." )]
 
-    //ToDo:  This should be the GUID of the Decline Reasons type which should probably be created in a migration.
     [DefinedTypeField(
         "Decline Reasons Type",
         Key = AttributeKey.DeclineReasonsType,
-        DefaultValue = "F9FBD423-2832-48AA-8C33-95DFA6878BEC" )]
-
-    [DefinedValueField(
-        "Map Style",
-        Key = AttributeKey.MapStyle,
-        Description = "The style of maps to use for selecting locations.",
-        DefinedTypeGuid = Rock.SystemGuid.DefinedType.MAP_STYLES,
-        DefaultValue = Rock.SystemGuid.DefinedValue.MAP_STYLE_ROCK,
-        Order = 3 )]
+        DefaultValue = Rock.SystemGuid.DefinedType.GROUP_RSVP_DECLINE_REASON,
+        Order = 0 )]
 
     public partial class RSVPDetail : RockBlock
     {
@@ -60,7 +52,6 @@ namespace RockWeb.Blocks.RSVP
         private static class AttributeKey
         {
             public const string DeclineReasonsType = "DeclineReasonsType";
-            public const string MapStyle = "MapStyle";
         }
 
         private static class PageParameterKey
