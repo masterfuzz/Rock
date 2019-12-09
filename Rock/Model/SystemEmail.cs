@@ -27,7 +27,7 @@ namespace Rock.Model
     /// Represents a Rock email template.
     /// </summary>
     [RockDomain( "Communication" )]
-    [Table( "SystemEmail" )]
+    [Table( "SystemCommunication" )]
     [DataContract]
     public partial class SystemEmail : Model<SystemEmail>
     {
@@ -43,6 +43,15 @@ namespace Rock.Model
         [Required]
         [DataMember( IsRequired = true )]
         public bool IsSystem { get; set; }
+
+        /// <summary>
+        /// Gets or sets a flag indicating if this item is available for use.
+        /// </summary>
+        /// <value>
+        /// A <see cref="System.Boolean"/> value that is <c>true</c> if this item is available for use.
+        /// </value>
+        [DataMember]
+        public bool? IsActive { get; set; }
 
         /// <summary>
         /// Gets or sets the category identifier.
@@ -137,6 +146,61 @@ namespace Rock.Model
         [Required]
         [DataMember( IsRequired = true )]
         public string Body { get; set; }
+
+        #region SMS Properties
+
+        /// <summary>
+        /// Gets or sets the SMS message content.
+        /// </summary>
+        /// <value>
+        /// A <see cref="System.String" /> containing the message text.
+        /// </value>
+        [DataMember]
+        public string SMSMessage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the SMS from number.
+        /// </summary>
+        /// <value>
+        /// The identifier of a Defined Value that identifies the SMS Sender.
+        /// </value>
+        [DataMember]
+        public int? SMSFromDefinedValueId { get; set; }
+
+        #endregion
+
+        #region Push Notification Properties
+
+        /// <summary>
+        /// Gets or sets the title of the notification.
+        /// </summary>
+        /// <value>
+        /// A <see cref="System.String" /> containing the notification title.
+        /// </value>
+        [DataMember]
+        [MaxLength( 100 )]
+        public string PushTitle { get; set; }
+
+        /// <summary>
+        /// Gets or sets the message text.
+        /// </summary>
+        /// <value>
+        /// A <see cref="System.String" /> containing the notification text.
+        /// </value>
+        [DataMember]
+        public string PushMessage { get; set; }
+
+        /// <summary>
+        /// Gets or sets the name of the sound alert to use for the notification.
+        /// </summary>
+        /// <value>
+        /// From number.
+        /// </value>
+        [DataMember]
+        [MaxLength( 100 )]
+        public string PushSound { get; set; }
+
+        #endregion
 
         #endregion
 

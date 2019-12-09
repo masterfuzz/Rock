@@ -41,6 +41,8 @@ namespace Rock.SystemGuid
         /// </summary>
         public const string PAGE_MENU = "CACB9D1A-A820-4587-986A-D66A69EE9948";
 
+        #region Communication Block Types
+
         /// <summary>
         /// Communication Detail Block Type Guid
         /// </summary>
@@ -55,6 +57,13 @@ namespace Rock.SystemGuid
         /// The Communication Entry (Wizard) Block Type Guid
         /// </summary>
         public const string COMMUNICATION_ENTRY_WIZARD = "F7D464E2-5F7C-47BA-84DB-7CC7B0B623C0";
+
+        /// <summary>
+        /// The System Communications List Block Type Guid
+        /// </summary>
+        public const string SYSTEM_COMMUNICATION_LIST = "68F10E30-BD74-49F5-B63F-DA671E31DA90";
+
+        #endregion
 
         /// <summary>
         /// The connection opportunity signup Block Type GUID

@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
@@ -92,7 +93,23 @@ namespace Rock.Model
         /// The invite system email identifier.
         /// </value>
         [DataMember]
-        public int? InviteSystemEmailId { get; set; }
+        public int? InviteSystemCommunicationId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the invite system email identifier.
+        /// </summary>
+        /// <value>
+        /// The invite system email identifier.
+        /// </value>
+        [DataMember]
+        [NotMapped]
+        [Obsolete( "Use InviteSystemCommunicationId instead." )]
+        [RockObsolete( "1.10" )]
+        public int? InviteSystemEmailId
+        {
+            get => InviteSystemCommunicationId;
+            set => InviteSystemCommunicationId = value;
+        }
 
         #endregion
 
@@ -172,7 +189,7 @@ namespace Rock.Model
         {
             this.HasOptional( t => t.BinaryFileType ).WithMany().HasForeignKey( t => t.BinaryFileTypeId ).WillCascadeOnDelete( false );
             this.HasOptional( t => t.ProviderEntityType ).WithMany().HasForeignKey( t => t.ProviderEntityTypeId ).WillCascadeOnDelete( false );
-            this.HasOptional( t => t.InviteSystemEmail ).WithMany().HasForeignKey( t => t.InviteSystemEmailId ).WillCascadeOnDelete( false );
+            this.HasOptional( t => t.InviteSystemEmail ).WithMany().HasForeignKey( t => t.InviteSystemCommunicationId ).WillCascadeOnDelete( false );
         }
     }
 

@@ -17,6 +17,7 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Rock;
@@ -34,13 +35,50 @@ namespace RockWeb.Blocks.Communication
     /// <summary>
     /// User control for managing the system emails
     /// </summary>
-    [DisplayName( "System Email List" )]
+    [DisplayName( "System Communication List" )]
     [Category( "Communication" )]
-    [Description( "Lists the system emails that can be configured." )]
+    [Description( "Lists the system communications that can be configured for use by the system and other automated (non-user) tasks." )]
 
     [LinkedPage( "Detail Page" )]
     public partial class SystemEmailList : RockBlock, ICustomGridColumns
     {
+        #region User Preference Keys
+
+        /// <summary>
+        /// Keys to use for Filter Settings
+        /// </summary>
+        private static class FilterSettingName
+        {
+            public const string Category = "Category";
+            public const string Active = "Active";
+            public const string Supports = "Supports";
+        }
+
+        #endregion
+
+        #region Filter Values
+
+        /// <summary>
+        /// Keys to use for Filter Values: Supports
+        /// </summary>
+        private static class NotificationTypeSupportedFilterValueSpecifier
+        {
+            public const string Email = "Email";
+            public const string SMS = "SMS";
+            public const string Push = "Push Notification";
+        }
+
+        /// <summary>
+        /// Keys to use for Filter Values: Active
+        /// </summary>
+        private static class IsActiveFilterValueSpecifier
+        {
+            public const string Active = "Active";
+            public const string Inactive = "Inactive";
+        }
+
+        #endregion
+
         #region Control Methods
 
         /// <summary>
@@ -74,6 +112,7 @@ namespace RockWeb.Blocks.Communication
             {
                 if ( !Page.IsPostBack )
                 {
+                    LoadFilterSelectionLists();
                     BindFilter();
                     BindGrid();
                 }
@@ -100,7 +139,10 @@ namespace RockWeb.Blocks.Communication
         protected void rFilter_ApplyFilterClick( object sender, EventArgs e )
         {
             int? categoryId = cpCategory.SelectedValueAsInt();
-            rFilter.SaveUserPreference( "Category", categoryId.HasValue ? categoryId.Value.ToString() : "");
+            rFilter.SaveUserPreference( FilterSettingName.Category, categoryId.HasValue ? categoryId.Value.ToString() : "");
+
+            rFilter.SaveUserPreference( FilterSettingName.Supports, ddlSupports.SelectedValue );
+            rFilter.SaveUserPreference( FilterSettingName.Active, ddlActiveFilter.SelectedValue );
 
             BindGrid();
         }
@@ -113,7 +155,7 @@ namespace RockWeb.Blocks.Communication
         /// <exception cref="System.NotImplementedException"></exception>
         void rFilter_DisplayFilterValue( object sender, GridFilter.DisplayFilterValueArgs e )
         {
-            if ( e.Key == "Category" )
+            if ( e.Key == FilterSettingName.Category )
             {
                 int? categoryId = e.Value.AsIntegerOrNull();
                 if ( categoryId.HasValue )
@@ -128,10 +170,6 @@ namespace RockWeb.Blocks.Communication
                 {
                     e.Value = string.Empty;
                 }
-            }
-            else
-            {
-                e.Value = string.Empty;
             }
         }
 
@@ -184,17 +222,68 @@ namespace RockWeb.Blocks.Communication
             BindGrid();
         }
 
+        /// <summary>
+        /// Handles the RowDataBound event of the gEmailTemplates control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="GridViewRowEventArgs"/> instance containing the event data.</param>
+        protected void gEmailTemplates_RowDataBound( object sender, GridViewRowEventArgs e )
+        {
+            var lSupports = e.Row.FindControl( "lSupports" ) as Literal;
+
+            var systemCommunication = e.Row.DataItem as SystemEmail;
+
+            if ( lSupports == null || systemCommunication == null )
+            {
+                return;
+            }
+
+            var html = new StringBuilder();
+
+            if ( !string.IsNullOrWhiteSpace( systemCommunication.SMSMessage ) )
+            {
+                html.AppendLine( "<span class='label label-info'>SMS</span>" );
+            }
+            if ( !string.IsNullOrWhiteSpace( systemCommunication.PushMessage ) )
+            {
+                html.AppendLine( "<span class='label label-info'>Push</span>" );
+            }
+
+            lSupports.Text = html.ToString();
+        }
+
         #endregion
 
         #region Internal Methods
+
+        /// <summary>
+        /// Populate the selection lists for the filter.
+        /// </summary>
+        private void LoadFilterSelectionLists()
+        {
+
+            ddlSupports.Items.Clear();
+            ddlSupports.Items.Add( new ListItem() );
+            ddlSupports.Items.Add( new ListItem( NotificationTypeSupportedFilterValueSpecifier.SMS ) );
+            ddlSupports.Items.Add( new ListItem( NotificationTypeSupportedFilterValueSpecifier.Push ) );
+
+            ddlActiveFilter.Items.Clear();
+            ddlActiveFilter.Items.Add( new ListItem() );
+            ddlActiveFilter.Items.Add( new ListItem( IsActiveFilterValueSpecifier.Active ) );
+            ddlActiveFilter.Items.Add( new ListItem( IsActiveFilterValueSpecifier.Inactive ) );
+        }
 
         /// <summary>
         /// Binds the filter.
         /// </summary>
         private void BindFilter()
         {
-            int? categoryId = rFilter.GetUserPreference( "Category" ).AsIntegerOrNull();
+            int? categoryId = rFilter.GetUserPreference( FilterSettingName.Category ).AsIntegerOrNull();
             cpCategory.SetValue( categoryId );
+
+            ddlActiveFilter.SetValue( rFilter.GetUserPreference( FilterSettingName.Active ) );
+
+            ddlSupports.SetValue( rFilter.GetUserPreference( FilterSettingName.Supports ) );
         }
 
         /// <summary>
@@ -205,21 +294,47 @@ namespace RockWeb.Blocks.Communication
             var systemEmailService = new SystemEmailService( new RockContext() );
             SortProperty sortProperty = gEmailTemplates.SortProperty;
 
-            var systemEmails = systemEmailService.Queryable( "Category" );
+            var systemCommunications = systemEmailService.Queryable( "Category" );
 
-            int? categoryId = rFilter.GetUserPreference( "Category" ).AsIntegerOrNull();
+            // Filter By: Category
+            int? categoryId = rFilter.GetUserPreference( FilterSettingName.Category ).AsIntegerOrNull();
             if ( categoryId.HasValue )
             {
-                systemEmails = systemEmails.Where( a => a.CategoryId.HasValue && a.CategoryId.Value == categoryId.Value  );
+                systemCommunications = systemCommunications.Where( a => a.CategoryId.HasValue && a.CategoryId.Value == categoryId.Value  );
             }
 
+            // Filter By: Is Active
+            var activeFilter = rFilter.GetUserPreference( FilterSettingName.Active );
+            switch ( activeFilter )
+            {
+                case "Active":
+                    systemCommunications = systemCommunications.Where( a => a.IsActive ?? false );
+                    break;
+                case "Inactive":
+                    systemCommunications = systemCommunications.Where( a => !(a.IsActive ?? false) );
+                    break;
+            }
+
+            // Filter By: Supports (Email|SMS)
+            var supports = rFilter.GetUserPreference( FilterSettingName.Supports );
+            switch ( supports )
+            {
+                case NotificationTypeSupportedFilterValueSpecifier.SMS:
+                    systemCommunications = systemCommunications.Where( a => a.SMSMessage != null && a.SMSMessage.Trim() != "" );
+                    break;
+                case NotificationTypeSupportedFilterValueSpecifier.Push:
+                    systemCommunications = systemCommunications.Where( a => a.PushMessage != null && a.PushMessage.Trim() != "" );
+                    break;
+            }
+
+            // Apply grid sort order.
             if ( sortProperty != null )
             {
-                gEmailTemplates.DataSource = systemEmails.Sort( sortProperty ).ToList();
+                gEmailTemplates.DataSource = systemCommunications.Sort( sortProperty ).ToList();
             }
             else
             {
-                gEmailTemplates.DataSource = systemEmails.OrderBy( a => a.Category.Name ).ThenBy( a => a.Title ).ToList();
+                gEmailTemplates.DataSource = systemCommunications.OrderBy( a => a.Category.Name ).ThenBy( a => a.Title ).ToList();
             }
 
             gEmailTemplates.EntityTypeId = EntityTypeCache.Get<Rock.Model.SystemEmail>().Id;

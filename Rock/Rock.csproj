@@ -485,6 +485,7 @@
     <Compile Include="Storage\AssetStorage\ApiClient\GoogleClient.cs" />
     <Compile Include="Storage\AssetStorage\GoogleCloudStorageComponent.cs" />
     <Compile Include="SystemGuid\Person.cs" />
+    <Compile Include="SystemGuid\SystemCommunication.cs" />
     <Compile Include="Transactions\StreakTypeRebuildTransaction.cs" />
     <Compile Include="Transactions\StreakTypeExclusionChangeTransaction.cs" />
     <Compile Include="Transactions\StreakAchievementAttemptChangeTransaction.cs" />

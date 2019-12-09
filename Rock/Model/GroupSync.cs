@@ -14,6 +14,7 @@
 // limitations under the License.
 // </copyright>
 //
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.ModelConfiguration;
@@ -71,7 +72,23 @@ namespace Rock.Model
         /// The welcome system email identifier.
         /// </value>
         [DataMember]
-        public int? WelcomeSystemEmailId { get; set; }
+        public int? WelcomeSystemCommunicationId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the welcome system email identifier.
+        /// </summary>
+        /// <value>
+        /// The welcome system email identifier.
+        /// </value>
+        [DataMember]
+        [NotMapped]
+        [Obsolete( "Use WelcomeSystemCommunicationId instead." )]
+        [RockObsolete( "1.10" )]
+        public int? WelcomeSystemEmailId
+        {
+            get => WelcomeSystemCommunicationId;
+            set => WelcomeSystemCommunicationId = value;
+        }
 
         /// <summary>
         /// Gets or sets the exit system email identifier.
@@ -80,7 +97,23 @@ namespace Rock.Model
         /// The exit system email identifier.
         /// </value>
         [DataMember]
-        public int? ExitSystemEmailId { get; set; }
+        public int? ExitSystemCommunicationId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the exit system email identifier.
+        /// </summary>
+        /// <value>
+        /// The exit system email identifier.
+        /// </value>
+        [DataMember]
+        [NotMapped]
+        [Obsolete( "Use ExitSystemCommunicationId instead." )]
+        [RockObsolete( "1.10" )]
+        public int? ExitSystemEmailId
+        {
+            get => ExitSystemCommunicationId;
+            set => ExitSystemCommunicationId = value;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether [add user accounts during synchronize].
@@ -157,8 +190,8 @@ namespace Rock.Model
             HasRequired( g => g.Group ).WithMany( g => g.GroupSyncs ).HasForeignKey( g => g.GroupId ).WillCascadeOnDelete( true );
             HasRequired( g => g.GroupTypeRole ).WithMany().HasForeignKey( g => g.GroupTypeRoleId ).WillCascadeOnDelete( false );
             HasRequired( g => g.SyncDataView ).WithMany().HasForeignKey( g => g.SyncDataViewId ).WillCascadeOnDelete( false );
-            HasOptional( g => g.WelcomeSystemEmail ).WithMany().HasForeignKey( g => g.WelcomeSystemEmailId ).WillCascadeOnDelete( false );
-            HasOptional( g => g.ExitSystemEmail ).WithMany().HasForeignKey( g => g.ExitSystemEmailId ).WillCascadeOnDelete( false );
+            HasOptional( g => g.WelcomeSystemEmail ).WithMany().HasForeignKey( g => g.WelcomeSystemCommunicationId ).WillCascadeOnDelete( false );
+            HasOptional( g => g.ExitSystemEmail ).WithMany().HasForeignKey( g => g.ExitSystemCommunicationId ).WillCascadeOnDelete( false );
         }
     }
     #endregion

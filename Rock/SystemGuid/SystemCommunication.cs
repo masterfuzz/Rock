@@ -14,34 +14,30 @@
 // limitations under the License.
 // </copyright>
 //
-using System;
-
 namespace Rock.SystemGuid
 {
     /// <summary>
-    /// System Email Templates
+    /// System Communication Templates
     /// </summary>
-    [Obsolete( "Use SystemCommunication instead." )]
-    [RockObsolete( "1.10" )]
-    public static class SystemEmail
+    public static class SystemCommunication
     {
         /// <summary>
-        /// Gets the template guid for the Attendance email
+        /// Gets the template guid for the Attendance communication
         /// </summary>
         public const string ATTENDANCE_NOTIFICATION = "CA794BD8-25C5-46D9-B7C2-AD8190AC27E6";
 
         /// <summary>
-        /// Gets the template guid for the Exception Notification email
+        /// Gets the template guid for the Exception Notification communication
         /// </summary>
         public const string CONFIG_EXCEPTION_NOTIFICATION = "75CB0A4A-B1C5-4958-ADEB-8621BD231520";
 
         /// <summary>
-        /// Gets the template guid for the Job Notification email
+        /// Gets the template guid for the Job Notification communication
         /// </summary>
         public const string CONFIG_JOB_NOTIFICATION = "691FEA1B-E5C4-4BF8-A7CD-C588F5C63CA8";
 
         /// <summary>
-        /// Gets the template guid for finance pledge confirmation email
+        /// Gets the template guid for finance pledge confirmation communication
         /// </summary>
         public const string FINANCE_PLEDGE_CONFIRMATION = "73E8D035-61BB-495A-A87F-39007B98834C";
 
@@ -66,32 +62,32 @@ namespace Rock.SystemGuid
         public const string REGISTRATION_NOTIFICATION = "158607D1-0772-4947-ADD6-EA31AB6ABC2F";
 
         /// <summary>
-        /// Gets the template guid for the Account Created email
+        /// Gets the template guid for the Account Created communication
         /// </summary>
         public const string SECURITY_ACCOUNT_CREATED = "84e373e9-3aaf-4a31-b3fb-a8e3f0666710";
 
         /// <summary>
-        /// Gets the template guid for the Confirm Account email
+        /// Gets the template guid for the Confirm Account communication
         /// </summary>
         public const string SECURITY_CONFIRM_ACCOUNT = "17aaceef-15ca-4c30-9a3a-11e6cf7e6411";
 
         /// <summary>
-        /// Gets the template guid for the Forgot Username email
+        /// Gets the template guid for the Forgot Username communication
         /// </summary>
         public const string SECURITY_FORGOT_USERNAME = "113593ff-620e-4870-86b1-7a0ec0409208";
 
         /// <summary>
-        /// The scheduling response email
+        /// The scheduling response communication
         /// </summary>
         public const string SCHEDULING_RESPONSE = "D095F78D-A5CF-4EF6-A038-C7B07E250611";
 
         /// <summary>
-        /// The scheduling remainder email
+        /// The scheduling remainder communication
         /// </summary>
         public const string SCHEDULING_REMAINDER = "8A20FE79-B73C-447A-82B1-416F9B50C038";
 
         /// <summary>
-        /// The scheduling confirmation email
+        /// The scheduling confirmation communication
         /// </summary>
         public const string SCHEDULING_CONFIRMATION = "F8E4CE07-68F5-4169-A865-ECE915CF421C";
 
@@ -121,7 +117,7 @@ namespace Rock.SystemGuid
         public const string SPARK_DATA_NOTIFICATION = "CBCBE0F0-67FB-6393-4D9C-592C839A2E54";
 
         /// <summary>
-        /// Gets the template guid for a Assessment Request system email
+        /// Gets the template guid for a Assessment Request system communication
         /// </summary>
         public const string ASSESSMENT_REQUEST = "41FF4269-7B48-40CD-81D4-C11370A13DED";
     }

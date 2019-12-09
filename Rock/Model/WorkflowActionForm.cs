@@ -40,13 +40,29 @@ namespace Rock.Model
         #region Entity Properties
 
         /// <summary>
+        /// Gets or sets the notification system communication identifier.
+        /// </summary>
+        /// <value>
+        /// The notification system communication identifier.
+        /// </value>
+        [DataMember]
+        public int? NotificationSystemCommunicationId { get; set; }
+
+        /// <summary>
         /// Gets or sets the notification system email identifier.
         /// </summary>
         /// <value>
         /// The notification system email identifier.
         /// </value>
         [DataMember]
-        public int? NotificationSystemEmailId { get; set; }
+        [NotMapped]
+        [Obsolete( "Use NotificationSystemCommunicationId instead." )]
+        [RockObsolete( "1.10" )]
+        public int? NotificationSystemEmailId
+        {
+            get => NotificationSystemCommunicationId;
+            set => NotificationSystemCommunicationId = value;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether [include actions in notification].
@@ -261,7 +277,7 @@ namespace Rock.Model
         /// </summary>
         public WorkflowActionFormConfiguration()
         {
-            this.HasOptional( f => f.NotificationSystemEmail ).WithMany().HasForeignKey( f => f.NotificationSystemEmailId ).WillCascadeOnDelete( false );
+            this.HasOptional( f => f.NotificationSystemEmail ).WithMany().HasForeignKey( f => f.NotificationSystemCommunicationId ).WillCascadeOnDelete( false );
         }
     }
 

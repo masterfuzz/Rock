@@ -599,6 +599,7 @@ namespace RockWeb.Blocks.Groups
                 group = new Group();
                 group.IsSystem = false;
                 group.Name = string.Empty;
+                group.GroupTypeId = CurrentGroupTypeId;
             }
             else
             {
@@ -652,6 +653,9 @@ namespace RockWeb.Blocks.Groups
                     groupSyncService.Delete( groupSync );
                 }
             }
+
+            // Assign the Group Type.
+            group.GroupType = new GroupTypeService( rockContext ).Get( group.GroupTypeId );
 
             List<GroupRequirement> groupRequirementsToInsert = new List<GroupRequirement>();
 
@@ -801,6 +805,28 @@ namespace RockWeb.Blocks.Groups
             group.InactiveReasonValueId = cbIsActive.Checked ? null : ddlInactiveReason.SelectedValueAsInt();
             group.InactiveReasonNote = cbIsActive.Checked ? null : tbInactiveNote.Text;
 
+
+            // Save RSVP settings.
+            if ( group.GroupType.EnableRSVP )
+            {
+                if ( group.GroupType.RSVPReminderSystemCommunicationId.HasValue )
+                {
+                    group.RSVPReminderOffsetDays = null;
+                    group.RSVPReminderSystemCommunicationId = null;
+                }
+                else
+                { 
+                    group.RSVPReminderOffsetDays = rsRsvpReminderOffsetDays.SelectedValue;
+                    group.RSVPReminderSystemCommunicationId = ddlRsvpReminderSystemCommunication.SelectedValueAsInt();
+                }
+            }
+            else
+            {
+                group.RSVPReminderOffsetDays = null;
+                group.RSVPReminderSystemCommunicationId = null;
+            }
+
+            // Save Scheduling settings.
             group.SchedulingMustMeetRequirements = cbSchedulingMustMeetRequirements.Checked;
             group.AttendanceRecordRequiredForCheckIn = ddlAttendanceRecordRequiredForCheckIn.SelectedValueAsEnum<AttendanceRecordRequiredForCheckIn>();
             group.ScheduleCancellationPersonAliasId = ppScheduleCancellationPerson.PersonAliasId;
@@ -887,7 +913,6 @@ namespace RockWeb.Blocks.Groups
             group.LoadAttributes();
             Helper.GetEditValues( phGroupAttributes, group );
 
-            group.GroupType = new GroupTypeService( rockContext ).Get( group.GroupTypeId );
             if ( group.ParentGroupId.HasValue )
             {
                 group.ParentGroup = groupService.Get( group.ParentGroupId.Value );
@@ -1212,6 +1237,8 @@ namespace RockWeb.Blocks.Groups
             {
                 var group = new Group { GroupTypeId = CurrentGroupTypeId };
                 var groupType = CurrentGroupTypeCache;
+
+                SetRsvpControls( groupType, null );
                 SetScheduleControls( groupType, null );
                 ShowGroupTypeEditDetails( groupType, group, true );
                 BindInheritedAttributes( CurrentGroupTypeId, new AttributeService( new RockContext() ) );
@@ -1556,6 +1583,10 @@ namespace RockWeb.Blocks.Groups
 
             LoadDropDowns( rockContext );
 
+            ddlRsvpReminderSystemCommunication.SetValue( group.RSVPReminderSystemCommunicationId );
+
+            rsRsvpReminderOffsetDays.SelectedValue = group.RSVPReminderOffsetDays;
+
             ddlSignatureDocumentTemplate.SetValue( group.RequiredSignatureDocumentTemplateId );
             gpParentGroup.SetValue( group.ParentGroup ?? groupService.Get( group.ParentGroupId ?? 0 ) );
 
@@ -1631,6 +1662,7 @@ namespace RockWeb.Blocks.Groups
             var groupTypeCache = CurrentGroupTypeCache;
             BindAdministratorPerson( group, groupTypeCache );
             nbGroupCapacity.Visible = groupTypeCache != null && groupTypeCache.GroupCapacityRule != GroupCapacityRule.None;
+            SetRsvpControls( groupTypeCache, group );
             SetScheduleControls( groupTypeCache, group );
             ShowGroupTypeEditDetails( groupTypeCache, group, true );
 
@@ -1863,6 +1895,51 @@ namespace RockWeb.Blocks.Groups
             }
 
             SetScheduleDisplay();
+        }
+
+        /// <summary>
+        /// Sets the RSVP controls.
+        /// </summary>
+        /// <param name="groupType">Type of the group.</param>
+        /// <param name="group">The group.</param>
+        private void SetRsvpControls( GroupTypeCache groupType, Group group )
+        {
+            bool showRsvp = false;
+            int? offsetDays = 0;
+            int? reminderSystemCommunicationId = null;
+            bool isReadOnly = true;
+
+            if ( groupType != null )
+            {
+                showRsvp = groupType.EnableRSVP;
+
+                if ( showRsvp )
+                {
+                    // If a specific RSVP Communication Template has been assigned for this Group Type, the RSVP settings for Groups of this type are read-only.
+                    isReadOnly = groupType.RSVPReminderSystemCommunicationId.HasValue;
+
+                    if ( isReadOnly || group == null )
+                    {
+                        // Get the RSVP Communication settings from the Group Type.
+                        offsetDays = groupType.RSVPReminderOffsetDays;
+                        reminderSystemCommunicationId = groupType.RSVPReminderSystemCommunicationId;
+                    }
+                    else
+                    {
+                        // Get the RSVP Communication settings from the Group.
+                        offsetDays = group.RSVPReminderOffsetDays;
+                        reminderSystemCommunicationId = group.RSVPReminderSystemCommunicationId;
+                    }
+                }
+            }
+
+            wpRsvp.Visible = showRsvp;
+
+            rsRsvpReminderOffsetDays.SelectedValue = offsetDays.GetValueOrDefault( 0 );
+            rsRsvpReminderOffsetDays.Enabled = !isReadOnly;
+
+            ddlRsvpReminderSystemCommunication.Enabled = !isReadOnly;
+            ddlRsvpReminderSystemCommunication.SetValue( reminderSystemCommunicationId );
         }
 
         /// <summary>
@@ -2148,13 +2225,37 @@ namespace RockWeb.Blocks.Groups
         /// </summary>
         private void LoadDropDowns( RockContext rockContext )
         {
+            // Populate Signature Document Templates
             ddlSignatureDocumentTemplate.Items.Clear();
+
             ddlSignatureDocumentTemplate.Items.Add( new ListItem() );
+
             foreach ( var documentType in new SignatureDocumentTemplateService( rockContext )
                 .Queryable().AsNoTracking()
                 .OrderBy( t => t.Name ) )
             {
-                ddlSignatureDocumentTemplate.Items.Add( new ListItem( documentType.Name, documentType.Id.ToString() ) );
+                ddlSignatureDocumentTemplate.Items.Add( new ListItem( documentType.Name, documentType.Id.ToString() ) );                
+            }
+
+            // Populate RSVP Reminder Communication Templates
+            ddlRsvpReminderSystemCommunication.Items.Clear();
+
+            ddlRsvpReminderSystemCommunication.Items.Add( new ListItem() );
+
+            var communicationTemplateService = new SystemEmailService( rockContext );
+
+            var systemCommunications = communicationTemplateService.Queryable()
+                .AsNoTracking()
+                .OrderBy( t => t.Title )
+                .Select( a => new
+                {
+                    a.Id,
+                    a.Title
+                } );
+
+            foreach ( var systemCommunication in systemCommunications )
+            {
+                ddlRsvpReminderSystemCommunication.Items.Add( new ListItem( systemCommunication.Title, systemCommunication.Id.ToString() ) );
             }
 
             ddlAttendanceRecordRequiredForCheckIn.BindToEnum<AttendanceRecordRequiredForCheckIn>();
@@ -3086,7 +3187,7 @@ namespace RockWeb.Blocks.Groups
             RockContext rockContext = new RockContext();
 
             CreateRoleDropDownList( rockContext );
-            CreateGroupSyncEmailDropDownLists( rockContext );
+            CreateSystemCommunicationDropDownLists( rockContext );
 
             dvipSyncDataView.EntityTypeId = EntityTypeCache.Get( typeof( Person ) ).Id;
 
@@ -3116,9 +3217,9 @@ namespace RockWeb.Blocks.Groups
             CreateRoleDropDownList( rockContext, groupSync.GroupTypeRoleId );
             ddlGroupRoles.SetValue( groupSync.GroupTypeRoleId );
 
-            CreateGroupSyncEmailDropDownLists( rockContext );
-            ddlWelcomeEmail.SetValue( groupSync.WelcomeSystemEmailId );
-            ddlExitEmail.SetValue( groupSync.ExitSystemEmailId );
+            CreateSystemCommunicationDropDownLists( rockContext );
+            ddlWelcomeCommunication.SetValue( groupSync.WelcomeSystemCommunicationId );
+            ddlExitCommunication.SetValue( groupSync.ExitSystemCommunicationId );
 
             cbCreateLoginDuringSync.Checked = groupSync.AddUserAccountsDuringSync;
 
@@ -3177,8 +3278,8 @@ namespace RockWeb.Blocks.Groups
             groupSync.GroupTypeRole = new GroupTypeRoleService( rockContext ).Get( groupSync.GroupTypeRoleId );
             groupSync.SyncDataViewId = dvipSyncDataView.SelectedValueAsInt() ?? 0;
             groupSync.SyncDataView = new DataViewService( rockContext ).Get( groupSync.SyncDataViewId );
-            groupSync.ExitSystemEmailId = ddlExitEmail.SelectedValue.AsIntegerOrNull();
-            groupSync.WelcomeSystemEmailId = ddlWelcomeEmail.SelectedValue.AsIntegerOrNull();
+            groupSync.ExitSystemCommunicationId = ddlExitCommunication.SelectedValue.AsIntegerOrNull();
+            groupSync.WelcomeSystemCommunicationId = ddlWelcomeCommunication.SelectedValue.AsIntegerOrNull();
             groupSync.AddUserAccountsDuringSync = cbCreateLoginDuringSync.Checked;
 
             hfGroupSyncGuid.Value = string.Empty;
@@ -3198,27 +3299,29 @@ namespace RockWeb.Blocks.Groups
         }
 
         /// <summary>
-        /// Creates the group sync email drop down lists. Does not set a selected value.
+        /// Creates the System Communication drop-down lists. Does not set a selected value.
         /// </summary>
         /// <param name="rockContext">The rock context.</param>
-        private void CreateGroupSyncEmailDropDownLists( RockContext rockContext )
+        private void CreateSystemCommunicationDropDownLists( RockContext rockContext )
         {
-            // Populate the email fields
-            var systemEmails = new SystemEmailService( rockContext )
+            // Populate the communication fields
+            var systemCommunications = new SystemEmailService( rockContext )
                 .Queryable()
                 .OrderBy( e => e.Title )
                 .Select( a => new { a.Id, a.Title } );
 
             // add a blank for the first option
-            ddlWelcomeEmail.Items.Add( new ListItem() );
-            ddlExitEmail.Items.Add( new ListItem() );
+            ddlWelcomeCommunication.Items.Add( new ListItem() );
+            ddlExitCommunication.Items.Add( new ListItem() );
+            ddlRsvpReminderSystemCommunication.Items.Add( new ListItem() );
 
-            if ( systemEmails.Any() )
+            if ( systemCommunications.Any() )
             {
-                foreach ( var systemEmail in systemEmails )
+                foreach ( var systemCommunication in systemCommunications )
                 {
-                    ddlWelcomeEmail.Items.Add( new ListItem( systemEmail.Title, systemEmail.Id.ToString() ) );
-                    ddlExitEmail.Items.Add( new ListItem( systemEmail.Title, systemEmail.Id.ToString() ) );
+                    ddlWelcomeCommunication.Items.Add( new ListItem( systemCommunication.Title, systemCommunication.Id.ToString() ) );
+                    ddlExitCommunication.Items.Add( new ListItem( systemCommunication.Title, systemCommunication.Id.ToString() ) );
+                    ddlRsvpReminderSystemCommunication.Items.Add( new ListItem( systemCommunication.Title, systemCommunication.Id.ToString() ) );
                 }
             }
         }
@@ -3266,10 +3369,9 @@ namespace RockWeb.Blocks.Groups
         /// </summary>
         private void ClearGroupSyncModal()
         {
-            //ddlSyncDataView.Items.Clear();
             ddlGroupRoles.Items.Clear();
-            ddlWelcomeEmail.Items.Clear();
-            ddlExitEmail.Items.Clear();
+            ddlWelcomeCommunication.Items.Clear();
+            ddlExitCommunication.Items.Clear();
             cbCreateLoginDuringSync.Checked = false;
         }
 

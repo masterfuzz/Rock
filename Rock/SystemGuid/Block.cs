@@ -41,5 +41,9 @@ namespace Rock.SystemGuid
         /// </summary>
         public const string RSVP_RESPONSE = "CA9DE522-DC29-45DE-8A86-C53AF02FA68C";
 
+        /// <summary>
+        /// System Communications List Block instance.
+        /// </summary>
+        public const string SYSTEM_COMMUNICATION_LIST = "68F10E30-BD74-49F5-B63F-DA671E31DA90";
     }
 }

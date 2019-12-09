@@ -385,6 +385,24 @@ namespace Rock.Web.Cache
         public bool EnableRSVP { get; private set; }
 
         /// <summary>
+        /// Gets or sets the system communication to use for sending an RSVP reminder.
+        /// </summary>
+        /// <value>
+        /// The RSVP reminder system communication identifier.
+        /// </value>
+        [DataMember]
+        public int? RSVPReminderSystemCommunicationId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number of days prior to the RSVP date that a reminder should be sent.
+        /// </summary>
+        /// <value>
+        /// The number of days.
+        /// </value>
+        [DataMember]
+        public int? RSVPReminderOffsetDays { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether scheduling is enabled for groups of this type
         /// </summary>
         /// <value>
@@ -742,6 +760,8 @@ namespace Rock.Web.Cache
             EnableGroupTag = groupType.EnableGroupTag;
             GroupStatusDefinedTypeId = groupType.GroupStatusDefinedTypeId;
             EnableRSVP = groupType.EnableRSVP;
+            RSVPReminderSystemCommunicationId = groupType.RSVPReminderSystemCommunicationId;
+            RSVPReminderOffsetDays = groupType.RSVPReminderOffsetDays;
             IsSchedulingEnabled = groupType.IsSchedulingEnabled;
             ScheduleConfirmationSystemEmailId = groupType.ScheduleConfirmationSystemEmailId;
             ScheduleReminderSystemEmailId = groupType.ScheduleReminderSystemEmailId;
